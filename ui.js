@@ -179,7 +179,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 과녁도 마우스 클릭 / 모바일 터치 드래그 연산 핸들러
   const simCanvas = document.getElementById('simCanvas');
+  
   function handleTargetClickOrTouch(clientX, clientY) {
+    if (!simCanvas) return; // 캔버스를 찾지 못했을 때 예외 처리 추가
     if (typeof currentView === 'undefined' || currentView !== 'target') return;
     
     const rect = simCanvas.getBoundingClientRect();
