@@ -5,13 +5,8 @@
 const canvas = document.getElementById('simCanvas');
 const ctx = canvas.getContext('2d');
 
-window.losLocalZ = 0; // 전역 조준점 Z 기본값 (과녁 중심)
-window.losLocalY = 0; // 전역 조준점 Y 기본값 (과녁 중심)
-
 let dprWidth = 0;
 let dprHeight = 0;
-// physics.js 상단 (let isFlying = false; 주변)에 추가
-let selectedTargetPoint = null; // { localZ: 0, localYFromBottom: 0 } 형태로 저장
 
 // [통일된 월드 공간 스케일 세팅]
 const MAX_WORLD_X = 180;   // 최대 전진 거리 180m
@@ -444,68 +439,6 @@ ctx.lineWidth = 1.5;
     ctx.restore();
   }
 }
-
- // LOS (Line of Sight) 3차원 투영 점선 그리기 엔진
-  const useLOSCheck = document.getElementById('useLOS');
-  if (useLOSCheck && useLOSCheck.checked) {
-    const lH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-    const lZ = parseFloat(document.getElementById('launchZ').value) || 0;
-    const eyePos = { x: 0, y: lH, z: lZ };
-
-    const tgtGeo = getDynamicTargetGeometry();
-    const targetBaseX = tgtGeo.baseX;
-    const safeTargetH = tgtGeo.height;
-
-    const centerWorldY = safeTargetH + (TGT_H / 2) * Math.cos(TGT_TILT);
-    const centerWorldX = targetBaseX + (TGT_H / 2) * Math.sin(TGT_TILT);
-
-    const losWorldX = centerWorldX + (window.losLocalY * Math.sin(TGT_TILT));
-    const losWorldY = centerWorldY + (window.losLocalY * Math.cos(TGT_TILT));
-    const losWorldZ = window.losLocalZ;
-
-    ctx.save();
-    ctx.lineWidth = 1.8;
-    ctx.setLineDash([4, 4]); // 대시 간격 4px 설정으로 선명한 점선 구축
-
-    if (currentView === 'target') {
-      const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
-      const markerX = (dprWidth / 2) + (losWorldZ * targetViewScale);
-      const localYFromBottom = window.losLocalY + (TGT_PROJ_H / 2);
-      const markerY = (dprHeight * 0.65) - (localYFromBottom * targetViewScale);
-
-      ctx.strokeStyle = '#ff9500';
-      ctx.beginPath();
-      ctx.arc(markerX, markerY, 7, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      ctx.fillStyle = '#ff9500';
-      ctx.beginPath();
-      ctx.arc(markerX, markerY, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      const pStart = toScreen(eyePos.x, eyePos.y, eyePos.z);
-      
-      // 화면 끝까지 확장되는 원거리 조준선 연장 스케일 가중치 적용
-      const extX = eyePos.x + (losWorldX - eyePos.x) * 2;
-      const extY = eyePos.y + (losWorldY - eyePos.y) * 2;
-      const extZ = eyePos.z + (losWorldZ - eyePos.z) * 2;
-      const pEnd = toScreen(extX, extY, extZ);
-
-      ctx.strokeStyle = '#ff2d55'; // 높은 시인성의 네온 핑크 컬러
-      ctx.beginPath();
-      ctx.moveTo(pStart.x, pStart.y);
-      ctx.lineTo(pEnd.x, pEnd.y);
-      ctx.stroke();
-
-      // 타겟 평면 교차점 인디케이터
-      const pIntersect = toScreen(losWorldX, losWorldY, losWorldZ);
-      ctx.fillStyle = '#ff9500';
-      ctx.beginPath();
-      ctx.arc(pIntersect.x, pIntersect.y, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
 
 // 캔버스 초기 크기 반영 지연 제어
 setTimeout(() => {

@@ -1,6 +1,6 @@
 const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
-  'angle', 'velocity', 'yawAngle', 'launchHeight',
+  'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
   'windX', 'windY', 'targetHeight', 'airDensity'
 ];
 
@@ -161,99 +161,6 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('mousemove', doDrag);
   window.addEventListener('mouseup', endDrag);
 });
-
- // LOS 체크박스 UI 상태 관리 및 데이터 연동
-  const losCheck = document.getElementById('useLOS');
-  const losLabel = document.getElementById('losStatusLabel');
-  if (losCheck && losLabel) {
-    const savedLOS = localStorage.getItem('arrow_sim_useLOS');
-    losCheck.checked = savedLOS === 'true';
-    losLabel.innerText = losCheck.checked ? 'ON' : 'OFF';
-
-    losCheck.addEventListener('change', () => {
-      losLabel.innerText = losCheck.checked ? 'ON' : 'OFF';
-      localStorage.setItem('arrow_sim_useLOS', losCheck.checked);
-      if (typeof drawScene === 'function') drawScene();
-    });
-  }
-
-  // 과녁도 마우스 클릭 / 모바일 터치 드래그 연산 핸들러
-   const simCanvas = document.getElementById('simCanvas');
-  function handleTargetClickOrTouch(clientX, clientY) {
-    if (!simCanvas) return;
-    if (typeof currentView === 'undefined' || currentView !== 'target') return;
-    
-    const rect = simCanvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const clickX = (clientX - rect.left) * (simCanvas.width / rect.width) / dpr;
-    const clickY = (clientY - rect.top) * (simCanvas.height / rect.height) / dpr;
-    
-    // physics.js의 전역 변수 대신 현재 캔버스의 실제 물리 크기 기반으로 실시간 계산
-    const currentDprWidth = simCanvas.width / dpr;
-    const currentDprHeight = simCanvas.height / dpr;
-    const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
-    const centerX = currentDprWidth / 2;
-    const tBottomY = currentDprHeight * 0.65;
-    
-    const pZ = (clickX - centerX) / targetViewScale;
-    const pY = (tBottomY - clickY) / targetViewScale;
-    
-    if (Math.abs(pZ) <= 1.5 && pY >= -0.5 && pY <= 3.5) {
-      window.losLocalZ = pZ;
-      const TGT_H = 2.667;
-      const TGT_TILT = 15 * Math.PI / 180;
-      const TGT_PROJ_H = TGT_H * Math.cos(TGT_TILT);
-      window.losLocalY = pY - (TGT_PROJ_H / 2);
-      
-      const losCheck = document.getElementById('useLOS');
-      const losLabel = document.getElementById('losStatusLabel');
-      if (losCheck) {
-        losCheck.checked = true;
-        if (losLabel) losLabel.innerText = 'ON';
-        localStorage.setItem('arrow_sim_useLOS', true);
-      }
-      if (typeof drawScene === 'function') drawScene();
-    }
-  }
-
-    
-    // 국궁 과녁 판정 범위 내 유효 필터링 (가로 ±1.5m, 세로 -0.5m ~ 3.5m)
-    if (Math.abs(pZ) <= 1.5 && pY >= -0.5 && pY <= 3.5) {
-      window.losLocalZ = pZ;
-      const TGT_H = 2.667;
-      const TGT_TILT = 15 * Math.PI / 180;
-      const TGT_PROJ_H = TGT_H * Math.cos(TGT_TILT);
-      window.losLocalY = pY - (TGT_PROJ_H / 2);
-      
-      if (losCheck) {
-        losCheck.checked = true;
-        losLabel.innerText = 'ON';
-        localStorage.setItem('arrow_sim_useLOS', true);
-      }
-      if (typeof drawScene === 'function') drawScene();
-    }
-  }
-
-  // PC 마우스 누르기 및 이동 바인딩
-  simCanvas.addEventListener('mousedown', (e) => {
-    handleTargetClickOrTouch(e.clientX, e.clientY);
-  });
-
-  // 모바일 터치 조준 및 드래그 트래킹 바인딩
-  simCanvas.addEventListener('touchstart', (e) => {
-    if (currentView === 'target') {
-      e.preventDefault(); 
-      handleTargetClickOrTouch(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-
-  simCanvas.addEventListener('touchmove', (e) => {
-    if (currentView === 'target') {
-      e.preventDefault();
-      handleTargetClickOrTouch(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: false });
-
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
   const introModal = document.getElementById('introModal');
@@ -264,35 +171,4 @@ function closeIntro() {
       introModal.style.display = 'none';
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
-}
-// ui.js의 DOMContentLoaded 리스너 내부 맨 아래에 추가
-canvas.addEventListener('mousedown', handleCanvasClick);
-canvas.addEventListener('touchstart', (e) => {
-    if (currentView === 'target' && e.touches.length === 1) {
-        // 드래그 기능과 충돌 방지를 위해 과녁도일 때만 터치 좌표 처리
-        handleCanvasClick(e.touches[0]);
-    }
-});
-
-function handleCanvasClick(e) {
-    if (currentView !== 'target') return; // 과녁도 화면이 아닐 때는 무시
-
-    // 캔버스 상의 실제 클릭 좌표 구하기
-    const rect = canvas.getBoundingClientRect();
-    const clickX = (e.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
-    const clickY = (e.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
-
-    // physics.js의 스케일 계산식 역산
-    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
-    const tBottomY = dprHeight * 0.65;
-
-    // 클릭한 위치를 월드 좌표(Z, Y)로 변환
-    const localZ = (clickX - (dprWidth / 2)) / targetViewScale;
-    const localYFromBottom = (tBottomY - clickY) / targetViewScale;
-
-    // 과녁 범위 안쪽 또는 주변을 클릭했을 때 점 저장 (원하는 경우 범위 제한 가능)
-    selectedTargetPoint = { localZ: localZ, localYFromBottom: localYFromBottom };
-
-    // 화면 다시 그리기
-    if (typeof drawScene === 'function') drawScene();
 }
