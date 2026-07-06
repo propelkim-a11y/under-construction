@@ -1,10 +1,3 @@
-// ui.js 파일 최상단 배열 수정
-const INPUT_IDS = [
- 'weight', 'diameter', 'dragCoeff', 'liftCoeff',
- 'angle', 'velocity', 'yawAngle', 'launchHeight',
- 'windX', 'windY', 'targetHeight', 'airDensity', 'toggleLOS' // <-- 추가
-];
-
 const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
   'angle', 'velocity', 'yawAngle', 'launchHeight',
@@ -178,39 +171,4 @@ function closeIntro() {
       introModal.style.display = 'none';
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
-}
-
-// loadSettings 함수 내부 엘리먼트 값 복원 로직 보완 (체크박스 처리용)
-function loadSettings() {
- INPUT_IDS.forEach(id => {
- const savedValue = localStorage.getItem('arrow_sim_' + id);
- const el = document.getElementById(id);
- if (el && savedValue !== null) {
-   if (el.type === 'checkbox') {
-     el.checked = savedValue === 'true';
-   } else {
-     el.value = savedValue;
-   }
- }
- });
-}
-
-// saveSettings 함수 내부 저장 로직 보완
-function saveSettings() {
- INPUT_IDS.forEach(id => {
- const el = document.getElementById(id);
- if (el) {
-   const val = el.type === 'checkbox' ? el.checked : el.value;
-   localStorage.setItem('arrow_sim_' + id, val);
- }
- });
-}
-
-// window.addEventListener('DOMContentLoaded', ...) 내부 제일 아래에 추가
-const losCheckbox = document.getElementById('toggleLOS');
-if (losCheckbox) {
-  losCheckbox.addEventListener('change', () => {
-    saveSettings();
-    if (typeof drawScene === 'function') drawScene();
-  });
 }
