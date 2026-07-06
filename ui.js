@@ -1,7 +1,8 @@
 const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
   'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
-  'windX', 'windY', 'targetHeight', 'airDensity'
+  'windX', 'windY', 'targetHeight', 'airDensity',
+  'losTargetY', 'losTargetZ' // 💡 LOS 수동 입력 ID 추가 (useLos는 체크박스이므로 별도 처리하거나 제외)
 ];
 
 function saveSettings() {
@@ -9,6 +10,8 @@ function saveSettings() {
     const el = document.getElementById(id);
     if (el) localStorage.setItem('arrow_sim_' + id, el.value);
   });
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
 }
 
 function loadSettings() {
@@ -19,6 +22,9 @@ function loadSettings() {
       el.value = savedValue;
     }
   });
+    const useLosEl = document.getElementById('useLos');
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
 }
 
 function switchPanel(type) {
@@ -56,10 +62,18 @@ function changeView(viewType, element) {
   if (typeof drawScene === 'function') drawScene();
 }
 
-const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight'];
+const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight', 'losTargetY', 'losTargetZ'];
 
 window.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) {
+        useLosEl.addEventListener('change', () => {
+           if (typeof saveSettings === 'function') saveSettings();
+           if (typeof drawScene === 'function') drawScene();
+  });
+}
+    
   INPUT_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -160,6 +174,20 @@ window.addEventListener('DOMContentLoaded', () => {
   dragBtn.addEventListener('mousedown', startDrag);
   window.addEventListener('mousemove', doDrag);
   window.addEventListener('mouseup', endDrag);
+ 
+  const useLosCheck = document.getElementById('useLos');
+  if (useLosCheck) {
+    // 로컬스토리지에서 기존 상태 복원
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    useLosCheck.checked = (savedLos === 'true');
+
+    // 변경될 때마다 저장하고 화면 리드로우
+    useLosCheck.addEventListener('change', () => {
+      localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
+      if (typeof drawScene === 'function') drawScene();
+    });
+  }  
+  
 });
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
