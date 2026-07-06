@@ -172,3 +172,11 @@ function closeIntro() {
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
+// 💡 [추가] PWA 홈 화면 설치 유도를 위한 서비스 워커 등록 코드
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('서비스 워커가 정상 등록되었습니다.', reg.scope))
+      .catch(err => console.log('서비스 워커 등록 실패:', err));
+  });
+}
