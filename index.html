@@ -208,5 +208,18 @@
 
 <script src="ui.js"></script>
 <script src="physics.js"></script>
+    
+     <!-- 2. 맨 아래에 이 스크립트 뭉치를 추가하세요 -->
+ <script>
+   if ('serviceWorker' in navigator) {
+     window.addEventListener('load', () => {
+       navigator.serviceWorker.register('./service-worker.js')
+         .then(reg => console.log('서비스 워커 등록 성공!'))
+         .catch(err => console.log('등록 실패:', err));
+     });
+   }
+ </script>
+</body>
+</html>
 </body>
 </html>
