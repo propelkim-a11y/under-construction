@@ -172,3 +172,56 @@ function closeIntro() {
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
+// =========================================================================
+// [기능 추가] 설정 패널 좌우 터치 슬라이딩(스와이프) 제어 시스템
+// =========================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  const panelContainer = document.getElementById('panel-container');
+  if (!panelContainer) return;
+
+  // 패널 순서 배열 정의
+  const panelOrder = ['arrow', 'method', 'env', 'result'];
+  
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const SWIPE_THRESHOLD = 50; // 스와이프로 인정할 최소 픽셀 거리
+
+  // 터치 시작 이벤트 탐지
+  panelContainer.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // 터치 종료 이벤트 탐지 및 슬라이딩 판정
+  panelContainer.addEventListener('touchend', (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    // 수직 스크롤(요소 내부 상하 스크롤) 방해를 줄이기 위해 대각선/수평 움직임 비율 체크
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD) {
+      // 현재 활성화된 패널의 ID(panel-xxx 형태에서 뒤쪽 이름만 추출) 찾기
+      const currentActivePanel = document.querySelector('.fixed-panel.active');
+      if (!currentActivePanel) return;
+      
+      const currentType = currentActivePanel.id.replace('panel-', '');
+      const currentIndex = panelOrder.indexOf(currentType);
+      
+      if (currentIndex === -1) return;
+
+      if (diffX < 0) {
+        // ◀ 왼쪽으로 쓸기 (오른쪽 패널로 이동)
+        if (currentIndex < panelOrder.length - 1) {
+          switchPanel(panelOrder[currentIndex + 1]);
+        }
+      } else {
+        // ▶ 오른쪽으로 쓸기 (왼쪽 패널로 이동)
+        if (currentIndex > 0) {
+          switchPanel(panelOrder[currentIndex - 1]);
+        }
+      }
+    }
+  }, { passive: true });
+});
