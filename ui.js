@@ -174,76 +174,86 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
   // 2. [신설] 과녁도 터치/마우스 조준 제어 시스템 (방금 안내해 드린 코드)
+  // =========================================================
+  // ⚡ [안전 보강 완료] 과녁도 터치/마우스 조준 제어 시스템
+  // =========================================================
   let isTargetSighting = false;
 
   function handleTargetSight(e) {
-    if (typeof currentView === 'undefined' || currentView !== 'target') return;
+    // [보안] 사법 설정의 체크박스가 꺼져있다면 아무것도 하지 않음
     if (useLosCheck && !useLosCheck.checked) return;
 
+    // 1. 캔버스 엘리먼트 안전하게 가져오기
     const canvasEl = document.getElementById('simCanvas');
     if (!canvasEl) return;
     const rect = canvasEl.getBoundingClientRect();
 
-    const clientX = e.touches ? e.touches.clientX : e.clientX;
-    const clientY = e.touches ? e.touches.clientY : e.clientY;
+    // 2. 터치 및 마우스 좌표 추출
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
+    // 3. 캔버스 내부 기준의 픽셀 좌표 구하기
     const screenX = clientX - rect.left;
     const screenY = clientY - rect.top;
 
-    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
-    const worldZ = (screenX - (dprWidth / 2)) / targetViewScale;
+    // 4. dpr 변수 안전 장치 (만약 전역 변수가 없으면 캔버스 실제 크기 사용)
+    const currentW = (typeof dprWidth !== 'undefined') ? dprWidth : canvasEl.width;
+    const currentH = (typeof dprHeight !== 'undefined') ? dprHeight : canvasEl.height;
 
-    const tBottomY = dprHeight * 0.65;
-    const worldY = (tBottomY - screenY) / targetViewScale;
+    // 5. 화면 픽셀 -> 월드 미터(m) 역산 공식
+    const targetViewScale = Math.min(currentW, currentH) / 5.5;
+    const worldZ = (screenX - (rect.width / 2)) / (rect.width / currentW) / targetViewScale;
+    const worldY = ((currentH * 0.65) - (screenY * (currentH / rect.height))) / targetViewScale;
 
+    // 6. UI 입력창 수치 실시간 주입
     const inputY = document.getElementById('losTargetY');
     const inputZ = document.getElementById('losTargetZ');
     
     if (inputY) inputY.value = worldY.toFixed(2);
     if (inputZ) inputZ.value = worldZ.toFixed(2);
 
+    // 7. 실시간 화면 갱신 함수 실행
     if (typeof drawScene === 'function') drawScene();
   }
 
   const simCanvasEl = document.getElementById('simCanvas');
   if (simCanvasEl) {
+    // 마우스 다운 -> 조준 시작
     simCanvasEl.addEventListener('mousedown', (e) => {
-      if (e.target === simCanvasEl && currentView === 'target') {
-        isTargetSighting = true;
-        handleTargetSight(e);
-      }
+      isTargetSighting = true;
+      handleTargetSight(e);
     });
 
+    // 마우스 이동 -> 드래그 트래킹
     window.addEventListener('mousemove', (e) => {
-      if (isTargetSighting) {
-        handleTargetSight(e);
-      }
+      if (isTargetSighting) handleTargetSight(e);
     });
 
+    // 마우스 업 -> 종료
     window.addEventListener('mouseup', () => {
       isTargetSighting = false;
     });
 
+    // 모바일 터치 스타트
     simCanvasEl.addEventListener('touchstart', (e) => {
-      if (e.target === simCanvasEl && currentView === 'target') {
-        isTargetSighting = true;
-        handleTargetSight(e);
-      }
+      isTargetSighting = true;
+      handleTargetSight(e);
     }, { passive: true });
 
+    // 모바일 터치 무브
     window.addEventListener('touchmove', (e) => {
-      if (isTargetSighting && currentView === 'target') {
+      if (isTargetSighting) {
         if (e.cancelable) e.preventDefault(); 
         handleTargetSight(e);
       }
     }, { passive: false });
 
+    // 모바일 터치 엔드
     window.addEventListener('touchend', () => {
       isTargetSighting = false;
     });
   }
-  
-});
+
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
   const introModal = document.getElementById('introModal');
