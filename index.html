@@ -148,16 +148,36 @@
 
 </div>
 
-<!-- 💡 [위치 이동] 설정 패널 밖으로 완전히 탈출시켜 맨 아래 고정된 저작권 표시 영역 -->
-<div id="app-copyright">
-    Copyright © 2026 해현-활터왔소. All Rights Reserved.
+<!-- 💡 저작권 표시 라인에 조회수를 완벽히 결합한 하단 영역 -->
+<div id="app-footer" style="text-align: center; margin-top: 35px; margin-bottom: 25px;">
+  <div id="app-copyright" style="
+    font-size: 11px; 
+    color: #555; 
+    opacity: 0.85; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 10px; 
+    flex-wrap: wrap;
+  ">
+    <!-- 저작권 문구 -->
+    <span>Copyright © 2026 해현-활터왔소. All Rights Reserved.</span>
+    
+    <!-- 세로 분리선 (구분 짓기용) -->
+    <span style="color: #444; opacity: 0.5;">|</span>
+    
+    <!-- 조회수 카운터 (한 줄 배치) -->
+    <span style="display: inline-flex; align-items: center; gap: 4px;">
+      <span>👁️ 조회수:</span>
+      <img src="https://twb.nz" alt="views" style="
+        height: 12px; 
+        vertical-align: middle; 
+        filter: grayscale(1) invert(0.8) opacity(0.65);
+      ">
+    </span>
+  </div>
 </div>
 
-<!-- 무제한 텍스트형 조회수 카운터 -->
-<div class="view-counter-text" style="text-align: right; margin: 15px 20px; font-size: 13px; color: #888; display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
-  <span>👁️ 누적 조회수:</span>
-  <img src="https://twb.nz" alt="views" style="height: 18px; vertical-align: middle; filter: grayscale(1) contrast(1.5);">
-</div>
    
     
 <!-- 맨 하단 메뉴 전환 탭바 -->
