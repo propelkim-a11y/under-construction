@@ -205,3 +205,12 @@ function saveSettings() {
  }
  });
 }
+
+// window.addEventListener('DOMContentLoaded', ...) 내부 제일 아래에 추가
+const losCheckbox = document.getElementById('toggleLOS');
+if (losCheckbox) {
+  losCheckbox.addEventListener('change', () => {
+    saveSettings();
+    if (typeof drawScene === 'function') drawScene();
+  });
+}
