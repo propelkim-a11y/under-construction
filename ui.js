@@ -172,3 +172,34 @@ function closeIntro() {
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
+// ui.js의 DOMContentLoaded 리스너 내부 맨 아래에 추가
+canvas.addEventListener('mousedown', handleCanvasClick);
+canvas.addEventListener('touchstart', (e) => {
+    if (currentView === 'target' && e.touches.length === 1) {
+        // 드래그 기능과 충돌 방지를 위해 과녁도일 때만 터치 좌표 처리
+        handleCanvasClick(e.touches[0]);
+    }
+});
+
+function handleCanvasClick(e) {
+    if (currentView !== 'target') return; // 과녁도 화면이 아닐 때는 무시
+
+    // 캔버스 상의 실제 클릭 좌표 구하기
+    const rect = canvas.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) * (canvas.width / rect.width) / window.devicePixelRatio;
+    const clickY = (e.clientY - rect.top) * (canvas.height / rect.height) / window.devicePixelRatio;
+
+    // physics.js의 스케일 계산식 역산
+    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
+    const tBottomY = dprHeight * 0.65;
+
+    // 클릭한 위치를 월드 좌표(Z, Y)로 변환
+    const localZ = (clickX - (dprWidth / 2)) / targetViewScale;
+    const localYFromBottom = (tBottomY - clickY) / targetViewScale;
+
+    // 과녁 범위 안쪽 또는 주변을 클릭했을 때 점 저장 (원하는 경우 범위 제한 가능)
+    selectedTargetPoint = { localZ: localZ, localYFromBottom: localYFromBottom };
+
+    // 화면 다시 그리기
+    if (typeof drawScene === 'function') drawScene();
+}
