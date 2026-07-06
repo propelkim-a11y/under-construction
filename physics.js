@@ -409,65 +409,6 @@ ctx.lineWidth = 1.5;
     const tgtBasePos = toScreen(targetBaseX, safeTargetH, 0);
     ctx.strokeStyle = '#515154'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(tgtBasePos.x, tgtBasePos.y); ctx.lineTo(tgtBasePos.x, tgtFloor.y); ctx.stroke();
   }
-// 여기서부터 💡 [신설] 과녁 기준 오조준 반영 LOS 렌더링 시스템 코드를 통째로 삽입하세요
-// === [복원/수정] 과녁 기준 오조준 반영 LOS 렌더링 시스템 ===
-const useLosCheckbox = document.getElementById('useLos');
-if (useLosCheckbox && useLosCheckbox.checked) {
-    // 엘리먼트가 존재할 때만 값을 파싱하며, 실패 시 0으로 안전하게 격리
-    const losOffsetZInput = document.getElementById('losOffsetZ');
-    const losOffsetYInput = document.getElementById('losOffsetY');
-    
-    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0;
-    const losOffsetZ = losOffsetZInput ? (parseFloat(losOffsetZInput.value) || 0) : 0;
-    const losOffsetY = losOffsetYInput ? (parseFloat(losOffsetYInput.value) || 0) : 0;
-    
-    const tgtGeo = getDynamicTargetGeometry();
-    const targetBaseX = tgtGeo.baseX;
-    const targetH = tgtGeo.height;
-    const centerWorldY = targetH + (TGT_H / 2) * Math.cos(TGT_TILT);
-    const centerWorldZ = 0;
-    
-    const finalLosWorldX = targetBaseX - losOffsetY * Math.sin(TGT_TILT);
-    const finalLosWorldY = centerWorldY + losOffsetY * Math.cos(TGT_TILT);
-    const finalLosWorldZ = centerWorldZ + losOffsetZ;
-
-    if (currentView !== 'target') {
-        const losStart = toScreen(0, launchH, launchZ);
-        const losEnd = toScreen(finalLosWorldX, finalLosWorldY, finalLosWorldZ);
-        
-        ctx.save();
-        ctx.strokeStyle = '#ff9500';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]); // 👈 [수정 완료] 빈 괄호 대신 [실선길이, 공백길이] 배열로 명시하여 프리징 원천 차단
-        
-        ctx.beginPath();
-        ctx.moveTo(losStart.x, losStart.y);
-        ctx.lineTo(losEnd.x, losEnd.y);
-        ctx.stroke();
-        ctx.restore();
-    } else {
-        const markerX = (dprWidth / 2) + (losOffsetZ * targetViewScale);
-        const markerY = (dprHeight * 0.65) - ((losOffsetY + TGT_PROJ_H / 2) * targetViewScale);
-        
-        ctx.save();
-        ctx.strokeStyle = '#ff3b30';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([]); // 과녁 크로스헤어는 일반 실선으로 초기화
-        
-        ctx.beginPath();
-        ctx.moveTo(markerX - 8, markerY - 8); ctx.lineTo(markerX + 8, markerY + 8);
-        ctx.moveTo(markerX + 8, markerY - 8); ctx.lineTo(markerX - 8, markerY + 8);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#ff3b30';
-        ctx.font = 'bold 11px -apple-system';
-        ctx.textAlign = 'left';
-        ctx.fillText(` 조준점 (표)`, markerX + 10, markerY + 4);
-        ctx.restore();
-    }
-}
-
 
   // [🛠️ 핵심 버그 패치 완료] 누적 비행 궤적선 변환 공식을 toScreen 시스템으로 강제 단일화 결합
   if (currentView !== 'target' && trajectory.length > 1) {
