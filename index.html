@@ -14,10 +14,14 @@
     <!-- 2. 안드로이드(Chrome) 및 PWA용 브라우저 파비콘 지정 -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.32.png">
- 
- <!-- 3. 홈 화면 추가 시 생성될 기본 앱 이름 고정 -->
-    <meta name="apple-mobile-web-app-title" content="국궁시뮬레이터">
+    <link rel="manifest" href="manifest.json">   
+  
+ <!-- 아이폰(iOS) 전용 설치 지원 코드 -->
+    <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="화살시뮬">
+    
 </head>
     
 <body>
