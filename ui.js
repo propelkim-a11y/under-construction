@@ -1,7 +1,7 @@
 const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
   'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
-  'windX', 'windY', 'targetHeight', 'airDensity'
+  'windX', 'windY', 'targetHeight', 'airDensity' 'losOffsetZ', 'losOffsetY'
 ];
 
 function saveSettings() {
@@ -9,6 +9,8 @@ function saveSettings() {
     const el = document.getElementById(id);
     if (el) localStorage.setItem('arrow_sim_' + id, el.value);
   });
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
 }
 
 function loadSettings() {
@@ -19,6 +21,9 @@ function loadSettings() {
       el.value = savedValue;
     }
   });
+    const useLosEl = document.getElementById('useLos');
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
 }
 
 function switchPanel(type) {
@@ -56,10 +61,18 @@ function changeView(viewType, element) {
   if (typeof drawScene === 'function') drawScene();
 }
 
-const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight'];
+const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight', 'losOffsetZ', 'losOffsetY'];
 
 window.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) {
+        useLosEl.addEventListener('change', () => {
+           if (typeof saveSettings === 'function') saveSettings();
+           if (typeof drawScene === 'function') drawScene();
+  });
+}
+    
   INPUT_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
