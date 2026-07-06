@@ -421,7 +421,26 @@ ctx.lineWidth = 1.5;
     }
     ctx.stroke();
   }
+const showLOS = document.getElementById('toggleLOS') ? document.getElementById('toggleLOS').checked : true;
+if (showLOS && currentView !== 'target') {
+    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0;
+    const tgtGeo = getDynamicTargetGeometry();
+    const tgtCenterW_X = tgtGeo.baseX + (TGT_H / 2) * Math.sin(TGT_TILT);
+    const tgtCenterW_Y = tgtGeo.height + TGT_PROJ_H / 2;
+    const losStart = toScreen(0, launchH, launchZ);
+    const losEnd = toScreen(tgtCenterW_X, tgtCenterW_Y, 0);
 
+    ctx.save();
+    ctx.strokeStyle = '#ff2d55';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]); // 점선 형태 스타일 (기존 코드 보완)
+    ctx.beginPath();
+    ctx.moveTo(losStart.x, losStart.y);
+    ctx.lineTo(losEnd.x, losEnd.y);
+    ctx.stroke();
+    ctx.restore();
+}
   // 실시간 화살 오브젝트 렌더링
   if (currentView !== 'target') {
     const arrowPos = toScreen(arrowState.x, arrowState.y, arrowState.z);
@@ -458,3 +477,49 @@ setTimeout(() => {
   
   drawScene();
 }, 250);
+function handleTargetClick(e) {
+    if (currentView !== 'target') return;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const mouseX = clientX - rect.left;
+    const mouseY = clientY - rect.top;
+
+    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
+    const tBottomY = dprHeight * 0.65;
+    const clickZ = (mouseX - (dprWidth / 2)) / targetViewScale;
+    const clickY = (tBottomY - mouseY) / targetViewScale;
+
+    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0;
+    const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+
+    const tgtGeo = getDynamicTargetGeometry();
+    const tgtCenterW_X = tgtGeo.baseX + (TGT_H / 2) * Math.sin(TGT_TILT);
+
+    const deltaX = tgtCenterW_X - 0; 
+    const deltaZ = clickZ - launchZ;
+    const calculatedYawRad = Math.atan2(deltaZ, deltaX);
+    const calculatedYawDeg = (calculatedYawRad * 180) / Math.PI;
+
+    const horizontalDist = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+    const targetCenterWorldY = tgtGeo.height + (TGT_PROJ_H / 2);
+    const clickWorldY = targetCenterWorldY + (clickY - (TGT_PROJ_H / 2));
+    const deltaY = clickWorldY - launchH;
+    
+    let calculatedPitchRad = Math.atan2(deltaY, horizontalDist);
+    const g = 9.81;
+    const tEstimated = horizontalDist / v0;
+    const dropAmount = 0.5 * g * tEstimated * tEstimated;
+    calculatedPitchRad = Math.atan2(deltaY + dropAmount, horizontalDist);
+    const calculatedPitchDeg = (calculatedPitchRad * 180) / Math.PI;
+
+    document.getElementById('angle').value = calculatedPitchDeg.toFixed(1);
+    document.getElementById('yawAngle').value = calculatedYawDeg.toFixed(1);
+
+    if (typeof saveSettings === 'function') saveSettings();
+    fireArrow();
+}
+
+canvas.addEventListener('mousedown', handleTargetClick);
+canvas.addEventListener('touchstart', handleTargetClick, { passive: true });
