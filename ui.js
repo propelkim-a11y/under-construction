@@ -172,35 +172,3 @@ function closeIntro() {
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
-
-// 페이지 로드 시 CounterAPI를 사용하여 조회수 처리
-window.addEventListener("load", function() {
-  const namespace = "propelkim-a11y-under-construction";
-  const key = "main_page";
-  const viewCountEl = document.getElementById("viewCount");
-
-  if (!viewCountEl) return;
-
-  // CounterAPI가 간혹 먹통일 때를 대비해 타임아웃(3초) 적용 및 대체 주소 활용
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-  fetch(`https://counterapi.dev{namespace}/${key}/up`, { signal: controller.signal })
-    .then(response => {
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error("HTTP Error");
-      return response.json();
-    })
-    .then(data => {
-      if (data && data.value !== undefined) {
-        viewCountEl.innerText = data.value.toLocaleString();
-      } else {
-        viewCountEl.innerText = "1"; // 데이터 파싱 실패 시 기본값
-      }
-    })
-    .catch(error => {
-      console.error("조회수 API 오류:", error);
-      // 서버 에러 시 투명하게 숨기거나 단순 텍스트 처리
-      viewCountEl.innerText = "확인 불가 (재시도 필요)";
-    });
-});
