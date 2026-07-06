@@ -5,25 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arrow Trajectory Simulator</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">   
-    
-    <!-- 💡 [추가] 홈 화면 설치 시 아이콘 및 타이틀 깨짐 방지 설정 -->
-    <!-- 1. 아이폰(iOS)용 홈 화면 앱 아이콘 지정 -->
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="화살시뮬">
-
-    <!-- 2. 안드로이드(Chrome) 및 PWA용 브라우저 파비콘 지정 -->
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.32.png">
-   
-   
 </head>
-    
 <body>
 <!-- 인트로 및 공지사항 모달 팝업 -->
 <div id="introModal" class="intro-modal">
@@ -166,38 +148,11 @@
 
 </div>
 
-<!-- 💡 저작권 표시 라인에 조회수를 완벽히 결합한 하단 영역 -->
-<div id="app-footer" style="text-align: center; margin-top: 35px; margin-bottom: 25px;">
-  <div id="app-copyright" style="
-    font-size: 11px; 
-    color: #555; 
-    opacity: 0.85; 
-    display: inline-flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 10px; 
-    flex-wrap: wrap;
-  ">
-    <!-- 저작권 문구 -->
-    <span>Copyright © 2026 해현-활터왔소. All Rights Reserved.</span>
-    
-    <!-- 세로 분리선 (구분 짓기용) -->
-    <span style="color: #444; opacity: 0.5;">|</span>
-    
-    <!-- 조회수 카운터 (한 줄 배치) -->
-    <span style="display: inline-flex; align-items: center; gap: 4px;">
-      <span>👁️ 조회수:</span>
-      <img src="https://twb.nz" alt="views" style="
-        height: 12px; 
-        vertical-align: middle; 
-        filter: grayscale(1) invert(0.8) opacity(0.65);
-      ">
-    </span>
-  </div>
+<!-- 💡 [위치 이동] 설정 패널 밖으로 완전히 탈출시켜 맨 아래 고정된 저작권 표시 영역 -->
+<div id="app-copyright">
+    Copyright © 2026 해현-활터왔소. All Rights Reserved.
 </div>
 
-   
-    
 <!-- 맨 하단 메뉴 전환 탭바 -->
 <div class="tab-bar">
     <button class="tab-item active" onclick="switchPanel('arrow')"><span class="tab-icon">🚀</span><span>화살 설정</span></button>
@@ -208,18 +163,5 @@
 
 <script src="ui.js"></script>
 <script src="physics.js"></script>
-    
-     <!-- 2. 맨 아래에 이 스크립트 뭉치를 추가하세요 -->
- <script>
-   if ('serviceWorker' in navigator) {
-     window.addEventListener('load', () => {
-       navigator.serviceWorker.register('./service-worker.js')
-         .then(reg => console.log('서비스 워커 등록 성공!'))
-         .catch(err => console.log('등록 실패:', err));
-     });
-   }
- </script>
-</body>
-</html>
 </body>
 </html>
