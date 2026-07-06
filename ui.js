@@ -200,3 +200,54 @@ function closeIntro() {
     }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
+// 과녁 확대도 터치 및 클릭 입력 연동
+canvas.addEventListener('mousedown', handleTargetClickOrTouch);
+canvas.addEventListener('touchstart', handleTargetClickOrTouch, { passive: false });
+
+function handleTargetClickOrTouch(e) {
+    if (currentView !== 'target') return;
+    
+    // 이벤트 타입에 따른 스크린 좌표 추출
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+        // 모바일 웹 뷰포트 터치 제어 및 스크롤 방지
+        e.preventDefault();
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    
+    // Canvas 내부 순수 CSS 픽셀 좌표 계산
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+    
+    // drawScene 내부의 targetViewScale 및 중심축 데이터 역산 공식
+    const tBottomY = dprHeight * 0.65;
+    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
+    
+    // 화면 픽셀로부터 실제 월드 공간(Z, Y) 단위 미터값 추출
+    const calculatedZ = (canvasX - (dprWidth / 2)) / targetViewScale;
+    const calculatedY = (tBottomY - canvasY) / targetViewScale;
+    
+    // 입력 엘리먼트 획득
+    const losYEl = document.getElementById('losTargetY');
+    const losZEl = document.getElementById('losTargetZ');
+    const useLosEl = document.getElementById('useLos');
+    
+    if (losYEl && losZEl) {
+        // 소수점 둘째 자리까지 반올림하여 대입
+        losYEl.value = calculatedY.toFixed(2);
+        losZEl.value = calculatedZ.toFixed(2);
+        
+        // 조준선 터치 입력 시 편의를 위해 표보기 사용 체크박스 강제 활성화
+        if (useLosEl) useLosEl.checked = true;
+        
+        // 전역 상태 저장 및 화면 즉시 갱신
+        if (typeof saveSettings === 'function') saveSettings();
+        if (typeof drawScene === 'function') drawScene();
+    }
+}
