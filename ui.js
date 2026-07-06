@@ -178,10 +178,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // 과녁도 마우스 클릭 / 모바일 터치 드래그 연산 핸들러
-  const simCanvas = document.getElementById('simCanvas');
-  
+   const simCanvas = document.getElementById('simCanvas');
   function handleTargetClickOrTouch(clientX, clientY) {
-    if (!simCanvas) return; // 캔버스를 찾지 못했을 때 예외 처리 추가
+    if (!simCanvas) return;
     if (typeof currentView === 'undefined' || currentView !== 'target') return;
     
     const rect = simCanvas.getBoundingClientRect();
@@ -189,12 +188,34 @@ window.addEventListener('DOMContentLoaded', () => {
     const clickX = (clientX - rect.left) * (simCanvas.width / rect.width) / dpr;
     const clickY = (clientY - rect.top) * (simCanvas.height / rect.height) / dpr;
     
-    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
-    const centerX = dprWidth / 2;
-    const tBottomY = dprHeight * 0.65;
+    // physics.js의 전역 변수 대신 현재 캔버스의 실제 물리 크기 기반으로 실시간 계산
+    const currentDprWidth = simCanvas.width / dpr;
+    const currentDprHeight = simCanvas.height / dpr;
+    const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
+    const centerX = currentDprWidth / 2;
+    const tBottomY = currentDprHeight * 0.65;
     
     const pZ = (clickX - centerX) / targetViewScale;
     const pY = (tBottomY - clickY) / targetViewScale;
+    
+    if (Math.abs(pZ) <= 1.5 && pY >= -0.5 && pY <= 3.5) {
+      window.losLocalZ = pZ;
+      const TGT_H = 2.667;
+      const TGT_TILT = 15 * Math.PI / 180;
+      const TGT_PROJ_H = TGT_H * Math.cos(TGT_TILT);
+      window.losLocalY = pY - (TGT_PROJ_H / 2);
+      
+      const losCheck = document.getElementById('useLOS');
+      const losLabel = document.getElementById('losStatusLabel');
+      if (losCheck) {
+        losCheck.checked = true;
+        if (losLabel) losLabel.innerText = 'ON';
+        localStorage.setItem('arrow_sim_useLOS', true);
+      }
+      if (typeof drawScene === 'function') drawScene();
+    }
+  }
+
     
     // 국궁 과녁 판정 범위 내 유효 필터링 (가로 ±1.5m, 세로 -0.5m ~ 3.5m)
     if (Math.abs(pZ) <= 1.5 && pY >= -0.5 && pY <= 3.5) {
