@@ -201,18 +201,53 @@ function closeIntro() {
   }
 }
 
-// 과녁 확대도 터치 및 클릭 입력 연동 (개선 팩)
-canvas.addEventListener('mousedown', handleTargetClickOrTouch);
-canvas.addEventListener('touchstart', handleTargetClickOrTouch, { passive: false });
+// =========================================================
+// 🎯 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템
+// =========================================================
+let isTargetDragging = false;
 
-function handleTargetClickOrTouch(e) {
+// 1. 드래그 시작 이벤트 연동
+canvas.addEventListener('mousedown', startTargetDrag);
+canvas.addEventListener('touchstart', startTargetDrag, { passive: false });
+
+// 2. 글로벌 움직임 및 종료 이벤트 연동 (윈도우 전역에서 추적해야 끊김이 없습니다)
+window.addEventListener('mousemove', doTargetDrag);
+window.addEventListener('touchmove', doTargetDrag, { passive: false });
+window.addEventListener('mouseup', endTargetDrag);
+window.addEventListener('touchend', endTargetDrag);
+
+// 드래그 시작 핸들러
+function startTargetDrag(e) {
     if (currentView !== 'target') return;
     
+    // 모바일 터치 시 브라우저 스크롤 및 팅김 현상 방지
+    if (e.touches) e.preventDefault();
+    
+    isTargetDragging = true;
+    updateTargetCoords(e);
+}
+
+// 드래그 중 핸들러
+function doTargetDrag(e) {
+    if (!isTargetDragging || currentView !== 'target') return;
+    if (e.touches) e.preventDefault(); // 드래그 중 화면 스크롤 차단
+    
+    updateTargetCoords(e);
+}
+
+// 드래그 종료 핸들러
+function endTargetDrag(e) {
+    if (isTargetDragging) {
+        isTargetDragging = false;
+    }
+}
+
+// 좌표 연산 및 화면 갱신 핵심 함수
+function updateTargetCoords(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
     
     if (e.touches && e.touches.length > 0) {
-        e.preventDefault(); // 모바일 환경 스크롤/바운스 방지
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
     } else {
@@ -224,11 +259,11 @@ function handleTargetClickOrTouch(e) {
     const canvasX = clientX - rect.left;
     const canvasY = clientY - rect.top;
     
-    // physics.js 드로잉 상수와 완전 동기화
+    // physics.js 스케일 레이아웃과 완전 동기화
     const tBottomY = dprHeight * 0.65;
     const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
     
-    // 화면 픽셀로부터 실제 월드 공간(Z, Y) 단위 미터값 계산
+    // 화면 픽셀로부터 실제 월드 공간(Z, Y) 단위 미터값 역산
     const calculatedZ = (canvasX - (dprWidth / 2)) / targetViewScale;
     const calculatedY = (tBottomY - canvasY) / targetViewScale;
     
@@ -237,23 +272,22 @@ function handleTargetClickOrTouch(e) {
     const useLosEl = document.getElementById('useLos');
     
     if (losYEl && losZEl) {
-        // 1. 값 대입 (소수점 둘째 자리까지 제한)
+        // 소수점 둘째 자리까지 제한하여 입력창 값 동기화
         losYEl.value = calculatedY.toFixed(2);
         losZEl.value = calculatedZ.toFixed(2);
         
-        // 2. 표보기 사용 체크박스 강제 활성화
-        if (useLosEl) {
+        // 표보기 사용 체크박스 강제 활성화 및 저장
+        if (useLosEl && !useLosEl.checked) {
             useLosEl.checked = true;
-            // 로컬스토리지 즉시 동기화
             localStorage.setItem('arrow_sim_useLos', 'true');
         }
         
-        // 3. [핵심 패치] 스크립트로 변경된 값을 브라우저 엔진에 강제 전파 (Dispatch Event)
+        // [중요] 변경된 값을 브라우저 시스템에 전파하여 로컬스토리지 백업 트리거 작동
         const intTrigger = new Event('input', { bubbles: true });
         losYEl.dispatchEvent(intTrigger);
         losZEl.dispatchEvent(intTrigger);
 
-        // 4. 전역 설정 즉시 저장 및 전체 도면 강제 리드로우
+        // 실시간 물리 도면 강제 리드로우
         if (typeof saveSettings === 'function') saveSettings();
         if (typeof drawScene === 'function') drawScene();
     }
