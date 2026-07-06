@@ -7,6 +7,8 @@ const ctx = canvas.getContext('2d');
 
 let dprWidth = 0;
 let dprHeight = 0;
+// physics.js 상단 (let isFlying = false; 주변)에 추가
+let selectedTargetPoint = null; // { localZ: 0, localYFromBottom: 0 } 형태로 저장
 
 // [통일된 월드 공간 스케일 세팅]
 const MAX_WORLD_X = 180;   // 최대 전진 거리 180m
