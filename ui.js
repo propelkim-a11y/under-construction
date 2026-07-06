@@ -175,8 +175,8 @@ function closeIntro() {
 // 💡 [추가] PWA 홈 화면 설치 유도를 위한 서비스 워커 등록 코드
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('서비스 워커가 정상 등록되었습니다.', reg.scope))
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('서비스 워커 등록 성공!', reg))
       .catch(err => console.log('서비스 워커 등록 실패:', err));
   });
 }
