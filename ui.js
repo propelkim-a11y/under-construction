@@ -5,21 +5,32 @@ const INPUT_IDS = [
 ];
 
 function saveSettings() {
-  INPUT_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) localStorage.setItem('arrow_sim_' + id, el.value);
-  });
+    INPUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) localStorage.setItem('arrow_sim_' + id, el.value);
+    });
+    // 엘리먼트 존재 여부를 엄격하게 한 번 더 검사
     const useLosEl = document.getElementById('useLos');
-    if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
+    if (useLosEl) {
+        localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
+    }
 }
 
 function loadSettings() {
-  INPUT_IDS.forEach(id => {
-    const savedValue = localStorage.getItem('arrow_sim_' + id);
-    const el = document.getElementById(id);
-    if (el && savedValue !== null) {
-      el.value = savedValue;
+    INPUT_IDS.forEach(id => {
+        const savedValue = localStorage.getItem('arrow_sim_' + id);
+        const el = document.getElementById(id);
+        if (el && savedValue !== null) {
+            el.value = savedValue;
+        }
+    });
+    const useLosEl = document.getElementById('useLos');
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    if (useLosEl && savedLos !== null) {
+        useLosEl.checked = (savedLos === 'true');
     }
+}
+
   });
     const useLosEl = document.getElementById('useLos');
     const savedLos = localStorage.getItem('arrow_sim_useLos');
