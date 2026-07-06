@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arrow Trajectory Simulator</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+ <script>
+   if ('serviceWorker' in navigator) {
+     navigator.serviceWorker.register('sw.js')
+       .then(() => console.log("서비스 워커 등록 완료"))
+       .catch(err => console.error("서비스 워커 등록 실패", err));
+   }
+ </script>
 </head>
 <body>
 <!-- 인트로 및 공지사항 모달 팝업 -->
