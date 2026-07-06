@@ -177,6 +177,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // =========================================================
   // ⚡ [안전 보강 완료] 과녁도 터치/마우스 조준 제어 시스템
   // =========================================================
+   // =========================================================
+  // ⚡ [안전 보강 완료] 과녁도 터치/마우스 조준 제어 시스템
+  // =========================================================
   let isTargetSighting = false;
 
   function handleTargetSight(e) {
@@ -253,6 +256,9 @@ window.addEventListener('DOMContentLoaded', () => {
       isTargetSighting = false;
     });
   }
+
+ 
+ 
 
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
