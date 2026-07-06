@@ -1,8 +1,7 @@
 const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
   'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
-  'windX', 'windY', 'targetHeight', 'airDensity',
-  'losTargetY', 'losTargetZ' // 💡 LOS 수동 입력 ID 추가 (useLos는 체크박스이므로 별도 처리하거나 제외)
+  'windX', 'windY', 'targetHeight', 'airDensity'
 ];
 
 function saveSettings() {
@@ -10,8 +9,6 @@ function saveSettings() {
     const el = document.getElementById(id);
     if (el) localStorage.setItem('arrow_sim_' + id, el.value);
   });
-    const useLosEl = document.getElementById('useLos');
-    if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
 }
 
 function loadSettings() {
@@ -22,9 +19,6 @@ function loadSettings() {
       el.value = savedValue;
     }
   });
-    const useLosEl = document.getElementById('useLos');
-    const savedLos = localStorage.getItem('arrow_sim_useLos');
-    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
 }
 
 function switchPanel(type) {
@@ -62,18 +56,10 @@ function changeView(viewType, element) {
   if (typeof drawScene === 'function') drawScene();
 }
 
-const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight', 'losTargetY', 'losTargetZ'];
+const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight'];
 
 window.addEventListener('DOMContentLoaded', () => {
   loadSettings();
-    const useLosEl = document.getElementById('useLos');
-    if (useLosEl) {
-        useLosEl.addEventListener('change', () => {
-           if (typeof saveSettings === 'function') saveSettings();
-           if (typeof drawScene === 'function') drawScene();
-  });
-}
-    
   INPUT_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -174,19 +160,88 @@ window.addEventListener('DOMContentLoaded', () => {
   dragBtn.addEventListener('mousedown', startDrag);
   window.addEventListener('mousemove', doDrag);
   window.addEventListener('mouseup', endDrag);
- 
+  // 1. LOS 체크박스 상태 복원 및 이벤트 등록 (기존 추가본)
   const useLosCheck = document.getElementById('useLos');
   if (useLosCheck) {
-    // 로컬스토리지에서 기존 상태 복원
     const savedLos = localStorage.getItem('arrow_sim_useLos');
     useLosCheck.checked = (savedLos === 'true');
 
-    // 변경될 때마다 저장하고 화면 리드로우
     useLosCheck.addEventListener('change', () => {
       localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
       if (typeof drawScene === 'function') drawScene();
     });
-  }  
+  }
+
+
+  // 2. [신설] 과녁도 터치/마우스 조준 제어 시스템 (방금 안내해 드린 코드)
+  let isTargetSighting = false;
+
+  function handleTargetSight(e) {
+    if (typeof currentView === 'undefined' || currentView !== 'target') return;
+    if (useLosCheck && !useLosCheck.checked) return;
+
+    const canvasEl = document.getElementById('simCanvas');
+    if (!canvasEl) return;
+    const rect = canvasEl.getBoundingClientRect();
+
+    const clientX = e.touches ? e.touches.clientX : e.clientX;
+    const clientY = e.touches ? e.touches.clientY : e.clientY;
+
+    const screenX = clientX - rect.left;
+    const screenY = clientY - rect.top;
+
+    const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
+    const worldZ = (screenX - (dprWidth / 2)) / targetViewScale;
+
+    const tBottomY = dprHeight * 0.65;
+    const worldY = (tBottomY - screenY) / targetViewScale;
+
+    const inputY = document.getElementById('losTargetY');
+    const inputZ = document.getElementById('losTargetZ');
+    
+    if (inputY) inputY.value = worldY.toFixed(2);
+    if (inputZ) inputZ.value = worldZ.toFixed(2);
+
+    if (typeof drawScene === 'function') drawScene();
+  }
+
+  const simCanvasEl = document.getElementById('simCanvas');
+  if (simCanvasEl) {
+    simCanvasEl.addEventListener('mousedown', (e) => {
+      if (e.target === simCanvasEl && currentView === 'target') {
+        isTargetSighting = true;
+        handleTargetSight(e);
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isTargetSighting) {
+        handleTargetSight(e);
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      isTargetSighting = false;
+    });
+
+    simCanvasEl.addEventListener('touchstart', (e) => {
+      if (e.target === simCanvasEl && currentView === 'target') {
+        isTargetSighting = true;
+        handleTargetSight(e);
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isTargetSighting && currentView === 'target') {
+        if (e.cancelable) e.preventDefault(); 
+        handleTargetSight(e);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', () => {
+      isTargetSighting = false;
+    });
+  }
   
 });
 // 인트로 공지사항 모달 닫기 함수
