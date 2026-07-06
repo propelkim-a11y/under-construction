@@ -105,6 +105,24 @@
                    <span class="unit">m</span>
                    </div>
                 </div>
+				<div class="form-group" style="grid-column: span 2; justify-content: flex-start; gap: 12px; background: rgba(0,113,227,0.05);">
+                         <label style="color: #0071e3; font-weight: 700;">LOS (조준선) 활성화</label>
+                         <input type="checkbox" id="useLos" checked style="width: 16px; height: 16px; cursor: pointer;">
+                     </div>
+                     <div class="form-group">
+                         <label>LOS 좌우 조준점</label>
+                         <div class="input-wrapper">
+                             <input type="text" id="losOffsetZ" value="0.0" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
+                             <span class="unit">m</span>
+                         </div>
+                     </div>
+                     <div class="form-group">
+                         <label>LOS 상하 조준점</label>
+                         <div class="input-wrapper">
+                             <input type="text" id="losOffsetY" value="0.0" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
+                             <span class="unit">m</span>
+                         </div>
+                     </div>
             </div> 
       </div>
     </div>
