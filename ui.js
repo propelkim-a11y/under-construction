@@ -371,7 +371,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }, { passive: true });
 });
 // =========================================================================
-// 📱 [신설] 모바일 터치 슬라이드(스와이프) 제어 연동
+// 📱 [수정완료] 모바일 터치 & PC 마우스 슬라이드(스와이프) 제어 연동
 // =========================================================================
 window.addEventListener('DOMContentLoaded', () => {
   const panelContainer = document.getElementById('panel-container');
@@ -379,6 +379,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   let touchStartX = 0;
   let touchStartY = 0;
+  let isPointerDown = false; // PC 마우스 제어용 플래그
 
   // 현재 어떤 패널이 활성화되어 있는지 확인하는 함수
   function getCurrentActiveTab() {
@@ -389,22 +390,46 @@ window.addEventListener('DOMContentLoaded', () => {
     return 'arrow';
   }
 
-  // 손가락이 화면에 닿았을 때 좌표 기억
-  panelContainer.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
+  // 시작 좌표 추출 공통 함수 (터치/마우스 모두 대응)
+  function getStartX(e) {
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+    return e.clientX;
+  }
+  function getStartY(e) {
+    if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
+    return e.clientY;
+  }
 
-  // 손가락이 화면에서 떨어졌을 때 움직인 방향 계산
-  panelContainer.addEventListener('touchend', (e) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
+  // 끝 좌표 추출 공통 함수 (터치/마우스 모두 대응)
+  function getEndX(e) {
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+    return e.clientX;
+  }
+  function getEndY(e) {
+    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY;
+    return e.clientY;
+  }
+
+  // 1. 드래그 시작 이벤트
+  function handleStart(e) {
+    isPointerDown = true;
+    touchStartX = getStartX(e);
+    touchStartY = getStartY(e);
+  }
+
+  // 2. 드래그 종료 및 방향 계산 판정 이벤트
+  function handleEnd(e) {
+    if (!isPointerDown) return;
+    isPointerDown = false;
+
+    const touchEndX = getEndX(e);
+    const touchEndY = getEndY(e);
 
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    // 수평 드래그 판정 기준 (입력창 위아래 스크롤 시 오작동 방지)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+    // 수평 드래그 판정 기준 (수직 스크롤 시 오작동 방지 및 최소 40px 이상 움직여야 전환)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
       const currentTab = getCurrentActiveTab();
       let currentIndex = tabOrder.indexOf(currentTab);
 
@@ -420,5 +445,13 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
-  }, { passive: true });
+  }
+
+  // 모바일 터치 이벤트 리스너 등록
+  panelContainer.addEventListener('touchstart', handleStart, { passive: true });
+  panelContainer.addEventListener('touchend', handleEnd, { passive: true });
+
+  // PC 브라우저 테스트용 마우스 이벤트 리스너 등록
+  panelContainer.addEventListener('mousedown', handleStart);
+  window.addEventListener('mouseup', handleEnd);
 });
