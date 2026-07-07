@@ -468,37 +468,38 @@ ctx.lineWidth = 1.5;
     ctx.restore();
   }
 // ==========================================
-// [최종 패치] setLineDash([4, 4]) 숫자 완벽 삽입본
+// [최종 검토 완료] 중복 선언(const) 에러 완벽 해결 및 고도차 반영본
 // ==========================================
-const useLosCheck = document.getElementById('useLos');
-if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
+const useLosCheckBottom = document.getElementById('useLos'); // 🎯 충돌 방지를 위해 변수명 변경
+if (useLosCheckBottom && useLosCheckBottom.checked && currentView !== 'target') {
     ctx.save();
     const startX = 0;
     const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
     const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
-    
     const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
     const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
     
-    // 실시간 과녁 기하학 구조(고도차 포함) 가져오기
-    const tgtGeo = getDynamicTargetGeometry();
-    const targetBaseX = tgtGeo.baseX;
-    const safeTargetH = tgtGeo.height; // 과녁 바닥의 실제 절대 고도
+    // 실시간 과녁 고도차 계산 연동
+    const tgtGeoInfo = getDynamicTargetGeometry();
+    const targetBaseX = tgtGeoInfo.baseX;
+    const safeTargetH = tgtGeoInfo.height; // 과녁 바닥의 절대 고도
 
     const screenStart = toScreen(startX, startY, startZ);
-    // Y축 좌표에 safeTargetH를 더해서 조준선 끝점이 과녁과 함께 움직이도록 수정
-    const screenEnd = toScreen(targetBaseX, safeTargetH + losY, losZ); 
+    // 🎯 Y축 연산에 과녁 바닥 고도(safeTargetH)를 더해 정면/측면/평면도 위치를 일치시킵니다.
+    const screenEnd = toScreen(targetBaseX, safeTargetH + losY, losZ);
 
     ctx.strokeStyle = '#ff9500'; // 주황색
     ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]); // 🎯 [4, 4] 입력 완료! 이제 절대 오류가 나지 않습니다.
+    
+    // 브라우저 캔버스 표준 배열 방식으로 안전하게 점선 처리
+    ctx.setLineDash([4, 4]); 
 
     ctx.beginPath();
     ctx.moveTo(screenStart.x, screenStart.y);
     ctx.lineTo(screenEnd.x, screenEnd.y);
     ctx.stroke();
 
-    ctx.setLineDash([]); // 스타일 리셋
+    ctx.setLineDash([]); // 점선 스타일 리셋
     ctx.fillStyle = '#ff9500';
     ctx.beginPath();
     ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
