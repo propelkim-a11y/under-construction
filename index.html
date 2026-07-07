@@ -4,45 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arrow Trajectory Simulator</title>
+    
+    <!-- 스타일시트 및 PWA 매니페스트 연동 -->
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon-192.png" type="image/png">
- <script>
-   if ('serviceWorker' in navigator) {
-     navigator.serviceWorker.register('sw.js')
-       .then(() => console.log("서비스 워커 등록 완료"))
-       .catch(err => console.error("서비스 워커 등록 실패", err));
-   }
- </script>
+
+    <!-- 💡 [PWA 패치] iOS Safari 환경 네이티브 독립 구동 메타 태그 추가 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="화살시뮬">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#0071e3">
+
+    <!-- 서비스 워커 브라우저 상주 등록 스크립트 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((reg) => console.log("서비스 워커 등록 완료, 범위:", reg.scope))
+                    .catch(err => console.error("서비스 워커 등록 실패", err));
+            });
+        }
+    </script>
 </head>
 <body>
+
 <!-- 인트로 및 공지사항 모달 팝업 -->
 <div id="introModal" class="intro-modal">
-  <div class="intro-content">
-  
-    <!-- 💡 조회수 배지 우측 상단 배치 -->
-       <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
-          <a href="https://hits.sh/propelkim-a11y.github.io/Arrow-Trajectory-Simulation/">
-             <img alt="Hits" src="https://hits.sh/propelkim-a11y.github.io/Arrow-Trajectory-Simulation.svg?style=flat-square&label=Users&extraCount=97&color=0045c6"/>
-          </a>
-       </div>
+    <div class="intro-content" style="position: relative;">
+    
+        <!-- 💡 [UX 패치] 조회수 배지 우측 상단 배치 보정 (반응형 겹침 방지 여백 확보) -->
+        <div class="intro-badge-wrapper" style="position: absolute; top: 15px; right: 15px; z-index: 10; line-height: 0;">
+            <a href="https://hits.sh/propelkim-a11y.github.io/Arrow-Trajectory-Simulation/" target="_blank" rel="noopener noreferrer">
+                <img alt="Hits" src="https://hits.sh/propelkim-a11y.github.io/Arrow-Trajectory-Simulation.svg?style=flat-square&label=Users&extraCount=97&color=0045c6" style="display: block; max-width: 100%; height: auto;"/>
+            </a>
+        </div>
    
-    <div class="intro-header">
-      <span class="intro-logo">🚀</span>
-      <h2>국궁 탄도 시뮬레이터</h2>
+        <div class="intro-header" style="margin-top: 10px;">
+            <span class="intro-logo">🚀</span>
+            <h2>국궁 탄도 시뮬레이터</h2>
+        </div>
+        <div class="intro-body">
+            <h3>📢 시스템 공지사항</h3>
+            <ul>
+                <li><strong>기능 추가:</strong> 과녁높이 차이 0m에서 표보기를 추가했습니다. 높이차이에 따라 추가 예정입니다.</li>
+                <li><strong>사용 안내:</strong> 바람, 과녁 고도차, 사수의 위치를 변경하며 정밀한 조준점 변화를 테스트해 보세요.</li>
+                <li>본 프로그램은 국궁 표준 제원을 바탕으로 제작된 시뮬레이터입니다.</li>
+            </ul>
+        </div>
+        <div class="intro-footer">
+            <button class="intro-close-btn" onclick="closeIntro()">시뮬레이터 시작하기</button>
+        </div>
     </div>
-    <div class="intro-body">
-      <h3>📢 시스템 공지사항</h3>
-      <ul>
-        <li><strong>기능 추가:</strong> 과녁높이 차이 0m에서 표보기를 추가했습니다. 높이차이에 따라 추가 예정입니다. </li>
-        <li><strong>사용 안내:</strong> 바람, 과녁 고도차, 사수의 위치를 변경하며 정밀한 조준점 변화를 테스트해 보세요.</li>
-        <li>본 프로그램은 국궁 표준 제원을 바탕으로 제작된 시뮬레이터입니다.</li>
-      </ul>
-    </div>
-    <div class="intro-footer">
-      <button class="intro-close-btn" onclick="closeIntro()">시뮬레이터 시작하기</button>
-    </div>
-  </div>
 </div>
 
 <!-- 상단 60% 영역: 메인 스크린 및 시뮬레이터 캔버스 -->
@@ -70,10 +84,10 @@
         <div class="panel-card">
             <div class="panel-title">화살 설정</div>
             <div class="form-grid">
-                <div class="form-group"><label>화살 무게</label><div class="input-wrapper"><input type="number" id="weight" value="25"><span class="unit">g</span></div></div>
-                <div class="form-group"><label>화살 직경</label><div class="input-wrapper"><input type="number" id="diameter" value="5.5" step="0.1"><span class="unit">mm</span></div></div>
-                <div class="form-group"><label>항력 계수</label><div class="input-wrapper"><input type="number" id="dragCoeff" value="0.35" step="0.01"><span class="unit">cd</span></div></div>
-                <div class="form-group"><label>양력 계수</label><div class="input-wrapper"><input type="number" id="liftCoeff" value="0.05" step="0.01"><span class="unit">cl</span></div></div>
+                <div class="form-group"><label>화살 무게</label><div class="input-wrapper"><input type="number" id="weight" value="25" inputmode="decimal"><span class="unit">g</span></div></div>
+                <div class="form-group"><label>화살 직경</label><div class="input-wrapper"><input type="number" id="diameter" value="5.5" step="0.1" inputmode="decimal"><span class="unit">mm</span></div></div>
+                <div class="form-group"><label>항력 계수</label><div class="input-wrapper"><input type="number" id="dragCoeff" value="0.35" step="0.01" inputmode="decimal"><span class="unit">cd</span></div></div>
+                <div class="form-group"><label>양력 계수</label><div class="input-wrapper"><input type="number" id="liftCoeff" value="0.05" step="0.01" inputmode="decimal"><span class="unit">cl</span></div></div>
             </div>
         </div>
     </div>
@@ -86,124 +100,61 @@
                 <div class="form-group">
                     <label>발시 고각</label>
                     <div class="input-wrapper">
-                        <input type="text" id="angle" value="30" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
+                        <!-- 💡 [UX 패치] 모바일에서 바로 숫자 키패드가 뜨도록 inputmode 수치 정밀화 -->
+                        <input type="text" id="angle" value="30" inputmode="decimal" pattern="^-?[0-9]*\.?[0-9]*$">
                         <span class="unit">°</span>
                     </div>
                 </div>
-                <div class="form-group"><label>초기 속도</label><div class="input-wrapper"><input type="number" id="velocity" value="50"><span class="unit">m/s</span></div></div>
+                <div class="form-group"><label>초기 속도</label><div class="input-wrapper"><input type="number" id="velocity" value="50" inputmode="decimal"><span class="unit">m/s</span></div></div>
                 <div class="form-group">
                     <label>앞뒤 각도</label>
                     <div class="input-wrapper">
-                        <input type="text" id="yawAngle" value="0" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
+                        <input type="text" id="yawAngle" value="0" inputmode="decimal" pattern="^-?[0-9]*\.?[0-9]*$">
                         <span class="unit">°</span>
                     </div>
                 </div>
                 <div class="form-group">
-                   <label>발시 높이 </label>
-                   <div class="input-wrapper">
-                        <input type="number" id="launchHeight" value="1.5" step="0.1">
+                    <label>발시 높이</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="launchHeight" value="1.5" step="0.1" inputmode="decimal">
                         <span class="unit">m</span>
-                   </div>
-                   </div>
+                    </div>
+                </div>
                   
                 <div class="form-group">
-                   <label for="launchZ">궁사 위치 </label>
-                   <div class="input-wrapper">
-                       <input type="text" id="launchZ" value="0" min="-10" max="10" step="0.5">
-                       <span class="unit">m</span>
-                   </div>
+                    <label for="launchZ">궁사 위치</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="launchZ" value="0" min="-10" max="10" step="0.5" inputmode="decimal">
+                        <span class="unit">m</span>
+                    </div>
                 </div>
 				
-                <div class="form-group" style="grid-column: span 2; background: rgba(0,113,227,0.05); margin-top: 5px;">
-                   <label style="color: #0071e3; font-weight: 700;">표보기 조준선 사용</label>
-                   <div class="input-wrapper">
-          <!-- 간단한 체크박스 또는 ON/OFF 표시용 (UI 스타일에 맞춤) -->
-                   <input type="checkbox" id="useLos" style="width: 20px; height: 20px; cursor: pointer;">
-                   </div>
+                <div class="form-group" style="grid-column: span 2; background: rgba(0,113,227,0.05); margin-top: 5px; border-radius: 8px; padding: 4px 8px;">
+                    <label style="color: #0071e3; font-weight: 700;">표보기 조준선 사용</label>
+                    <div class="input-wrapper" style="display: flex; align-items: center; justify-content: flex-end;">
+                        <input type="checkbox" id="useLos" style="width: 20px; height: 20px; cursor: pointer;">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                   <label>높이 Y</label>
-                   <div class="input-wrapper">
-                       <input type="text" id="losTargetY" value="1.3" inputmode="text">
-                       <span class="unit">m</span>
-                   </div>
+                    <label>높이 Y</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="losTargetY" value="1.3" inputmode="decimal">
+                        <span class="unit">m</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                  <label>앞뒤 Z</label>
-                  <div class="input-wrapper">
-                    <input type="text" id="losTargetZ" value="0.0" inputmode="text">
-                    <span class="unit">m</span>
-                  </div>
+                    <label>앞뒤 Z</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="losTargetZ" value="0.0" inputmode="decimal">
+                        <span class="unit">m</span>
+                    </div>
                 </div>				
-				
             </div> 
         </div>
     </div>
-
-    <!-- [탭 3] 환경 설정 -->
-    <div class="fixed-panel" id="panel-env">
-        <div class="panel-card">
-            <div class="panel-title">환경 설정</div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>종풍</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="windX" value="0" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
-                        <span class="unit">m/s</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>횡풍</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="windY" value="0" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
-                        <span class="unit">m/s</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>과녁 고도차</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="targetHeight" value="1.3" inputmode="text" pattern="^-?[0-9]*\.?[0-9]*$">
-                        <span class="unit">m</span>
-                    </div>
-                </div>
-                <div class="form-group"><label>공기 밀도</label><div class="input-wrapper"><input type="number" id="airDensity" value="1.225" step="0.001"><span class="unit">kg/m³</span></div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- [탭 4] 비행 결과 -->
-    <div class="fixed-panel" id="panel-result">
-        <div class="panel-card">
-            <div class="panel-title">비행 결과 분석</div>
-            <div class="form-grid">
-                <div class="form-group"><label>최대 거리</label><div class="result-value" id="resMaxDist">0.00 m</div></div>
-                <div class="form-group"><label>최대 높이</label><div class="result-value" id="resMaxHeight">0.00 m</div></div>
-                <div class="form-group"><label>측면 편차</label><div class="result-value" id="resSideDev">0.00 m</div></div>
-                <div class="form-group"><label>비행 시간</label><div class="result-value" id="resFlightTime">0.00 s</div></div>
-                <div class="form-group"><label>충돌 속도</label><div class="result-value" id="resImpactVel">0.00 m/s</div></div>
-                <div class="form-group"><label>충돌 에너지</label><div class="result-value" id="resImpactEnergy">0.00 J</div></div>
-            </div>
-        </div>
-    </div>
-
 </div>
 
-<!-- 💡 [위치 이동] 설정 패널 밖으로 완전히 탈출시켜 맨 아래 고정된 저작권 표시 영역 -->
-<div id="app-copyright">
-    Copyright © 2026 해현-활터왔소. All Rights Reserved.
-</div>
-
-<!-- 맨 하단 메뉴 전환 탭바 -->
-<div class="tab-bar">
-    <button class="tab-item active" onclick="switchPanel('arrow')"><span class="tab-icon">🚀</span><span>화살 설정</span></button>
-    <button class="tab-item" onclick="switchPanel('method')"><span class="tab-icon">🏹</span><span>사법 설정</span></button>
-    <button class="tab-item" onclick="switchPanel('env')"><span class="tab-icon">🐓</span><span>환경 설정</span></button>
-    <button class="tab-item" onclick="switchPanel('result')"><span class="tab-icon">📊</span><span>비행 결과</span></button>
-</div>
-
-<script src="ui.js"></script>
-<script src="physics.js"></script>
 </body>
 </html>
