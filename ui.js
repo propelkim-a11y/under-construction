@@ -28,29 +28,17 @@ function loadSettings() {
 }
 
 function switchPanel(type) {
- // 순서대로 배치된 탭 리스트 정의
-const tabOrder = ['arrow', 'method', 'env', 'result'];
+  saveSettings();
+  const panels = ['arrow', 'method', 'env', 'result'];
+  panels.forEach(p => {
+    const el = document.getElementById('panel-' + p);
+    if (el) el.classList.remove('active');
+  });
 
-// [수정] 가로 이동 애니메이션 방식으로 전환되는 패널 스위칭 함수
-function switchPanel(type) {
-  if (typeof saveSettings === 'function') saveSettings();
-  
-  const track = document.getElementById('panelTrack');
-  const index = tabOrder.indexOf(type);
-  
-  if (track && index !== -1) {
-    // 💡 핵심: 가로축(X) 좌표를 패널 순서에 맞게 -25%씩 왼쪽으로 밀어서 슬라이드 구현
-    track.style.transform = `translateX(-${index * 25}%)`;
-    
-    // 기존 active 클래스 구조 유지 (호환성용)
-    tabOrder.forEach(p => {
-      const el = document.getElementById('panel-' + p);
-      if (el) el.classList.remove('active');
-    });
-    const targetPanel = document.getElementById('panel-' + type);
-    if (targetPanel) targetPanel.classList.add('active');
+  const targetPanel = document.getElementById('panel-' + type);
+  if (targetPanel) {
+    targetPanel.classList.add('active');
   }
-
   updateTabActiveStyle(type);
   if (typeof drawScene === 'function') drawScene();
 }
@@ -369,89 +357,4 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   }, { passive: true });
-});
-// =========================================================================
-// 📱 [수정완료] 모바일 터치 & PC 마우스 슬라이드(스와이프) 제어 연동
-// =========================================================================
-window.addEventListener('DOMContentLoaded', () => {
-  const panelContainer = document.getElementById('panel-container');
-  if (!panelContainer) return;
-
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let isPointerDown = false; // PC 마우스 제어용 플래그
-
-  // 현재 어떤 패널이 활성화되어 있는지 확인하는 함수
-  function getCurrentActiveTab() {
-    for (let i = 0; i < tabOrder.length; i++) {
-      const el = document.getElementById('panel-' + tabOrder[i]);
-      if (el && el.classList.contains('active')) return tabOrder[i];
-    }
-    return 'arrow';
-  }
-
-  // 시작 좌표 추출 공통 함수 (터치/마우스 모두 대응)
-  function getStartX(e) {
-    if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
-    return e.clientX;
-  }
-  function getStartY(e) {
-    if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
-    return e.clientY;
-  }
-
-  // 끝 좌표 추출 공통 함수 (터치/마우스 모두 대응)
-  function getEndX(e) {
-    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
-    return e.clientX;
-  }
-  function getEndY(e) {
-    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY;
-    return e.clientY;
-  }
-
-  // 1. 드래그 시작 이벤트
-  function handleStart(e) {
-    isPointerDown = true;
-    touchStartX = getStartX(e);
-    touchStartY = getStartY(e);
-  }
-
-  // 2. 드래그 종료 및 방향 계산 판정 이벤트
-  function handleEnd(e) {
-    if (!isPointerDown) return;
-    isPointerDown = false;
-
-    const touchEndX = getEndX(e);
-    const touchEndY = getEndY(e);
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    // 수평 드래그 판정 기준 (수직 스크롤 시 오작동 방지 및 최소 40px 이상 움직여야 전환)
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
-      const currentTab = getCurrentActiveTab();
-      let currentIndex = tabOrder.indexOf(currentTab);
-
-      if (deltaX < 0) {
-        // ⬅️ 왼쪽으로 슥 밀었을 때: 다음 설정 패널로 이동
-        if (currentIndex < tabOrder.length - 1) {
-          switchPanel(tabOrder[currentIndex + 1]);
-        }
-      } else {
-        // ➡️ 오른쪽으로 슥 밀었을 때: 이전 설정 패널로 이동
-        if (currentIndex > 0) {
-          switchPanel(tabOrder[currentIndex - 1]);
-        }
-      }
-    }
-  }
-
-  // 모바일 터치 이벤트 리스너 등록
-  panelContainer.addEventListener('touchstart', handleStart, { passive: true });
-  panelContainer.addEventListener('touchend', handleEnd, { passive: true });
-
-  // PC 브라우저 테스트용 마우스 이벤트 리스너 등록
-  panelContainer.addEventListener('mousedown', handleStart);
-  window.addEventListener('mouseup', handleEnd);
 });
