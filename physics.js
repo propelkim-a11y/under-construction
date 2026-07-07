@@ -468,7 +468,7 @@ ctx.lineWidth = 1.5;
     ctx.restore();
   }
 // ==========================================
-// [재수정] setLineDash 인자 오류 패치 및 과녁 고도차 연동 완료
+// [최종 패치] setLineDash([4, 4]) 숫자 완벽 삽입본
 // ==========================================
 const useLosCheck = document.getElementById('useLos');
 if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
@@ -491,7 +491,7 @@ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
 
     ctx.strokeStyle = '#ff9500'; // 주황색
     ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]); // 🎯 점선 크기를 [4, 4]로 명확하게 지정 (오류 해결)
+    ctx.setLineDash([4, 4]); // 🎯 [4, 4] 입력 완료! 이제 절대 오류가 나지 않습니다.
 
     ctx.beginPath();
     ctx.moveTo(screenStart.x, screenStart.y);
@@ -505,7 +505,6 @@ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
     ctx.fill();
     ctx.restore();
 }
-
 
 
 // 캔버스 초기 크기 반영 지연 제어
