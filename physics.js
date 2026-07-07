@@ -467,36 +467,45 @@ ctx.lineWidth = 1.5;
     ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-16, -4); ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.fill();
     ctx.restore();
   }
-     const useLosCheck = document.getElementById('useLos');
- if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
-     ctx.save();
-     const startX = 0;
-     const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-     const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
-     const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
-     const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
-     const targetBaseX = getDynamicTargetGeometry().baseX;
-     
-     const screenStart = toScreen(startX, startY, startZ);
-     const screenEnd = toScreen(targetBaseX, losY, losZ);
-     
-     ctx.strokeStyle = '#ff9500'; // 주황색
-     ctx.lineWidth = 1.2;
-     ctx.setLineDash([4, 4]); // 점선 스타일 적용
-     
-     ctx.beginPath();
-     ctx.moveTo(screenStart.x, screenStart.y);
-     ctx.lineTo(screenEnd.x, screenEnd.y);
-     ctx.stroke();
-     
-     ctx.setLineDash([]); // 스타일 리셋
-     ctx.fillStyle = '#ff9500';
-     ctx.beginPath();
-     ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
-     ctx.fill();
-     ctx.restore();
- }
+// ==========================================
+// [수정] 다른 뷰(측면, 정면, 평면)에서 조준선이 과녁 고도차를 반영하도록 패치
+// ==========================================
+const useLosCheck = document.getElementById('useLos');
+if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
+    ctx.save();
+    const startX = 0;
+    const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+    const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
+    
+    const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
+    const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
+    
+    // 실시간 과녁 기하학 구조(고도차 포함) 가져오기
+    const tgtGeo = getDynamicTargetGeometry();
+    const targetBaseX = tgtGeo.baseX;
+    const safeTargetH = tgtGeo.height; // 🎯 과녁 바닥의 실제 절대 고도
+
+    const screenStart = toScreen(startX, startY, startZ);
+    // 🎯 Y축 좌표에 safeTargetH를 더해서 조준선 끝점이 과녁과 함께 움직이도록 수정
+    const screenEnd = toScreen(targetBaseX, safeTargetH + losY, losZ); 
+
+    ctx.strokeStyle = '#ff9500'; // 주황색
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]); // 점선 스타일 적용
+
+    ctx.beginPath();
+    ctx.moveTo(screenStart.x, screenStart.y);
+    ctx.lineTo(screenEnd.x, screenEnd.y);
+    ctx.stroke();
+
+    ctx.setLineDash([]); // 스타일 리셋
+    ctx.fillStyle = '#ff9500';
+    ctx.beginPath();
+    ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 }
+
 
 // 캔버스 초기 크기 반영 지연 제어
 setTimeout(() => {
