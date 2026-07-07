@@ -370,37 +370,74 @@ ctx.lineWidth = 1.5;
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(fLeftBot.x, fLeftBot.y); ctx.lineTo(fRightBot.x, fRightBot.y); ctx.lineTo(bRightTop.x, bRightTop.y); ctx.lineTo(bLeftTop.x, bLeftTop.y); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 1.5; ctx.stroke();
 
-  } else if (currentView === 'target') {
-    const tLeftX = (dprWidth / 2) - (TGT_W / 2 * targetViewScale); 
-    const tRightX = (dprWidth / 2) + (TGT_W / 2 * targetViewScale);
-    const tBottomY = dprHeight * 0.65; 
-    const tTopY = tBottomY - (TGT_PROJ_H * targetViewScale);
-    const w = tRightX - tLeftX; 
-    const h = tBottomY - tTopY;
+ } else if (currentView === 'target') {
+ // [스케일 고정] 사람의 시각(화면 크기 비례) 기준 스케일은 고정 유지
+ const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
 
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(tLeftX, tTopY, w, h);
-    ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 2; ctx.strokeRect(tLeftX, tTopY, w, h);
-    ctx.fillStyle = '#1d1d1f'; ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.08, w * 0.8, h * 0.15);
-    ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.3, w * 0.8, h * 0.62);
-    ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.arc(tLeftX + w * 0.5, (tTopY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, 0, Math.PI * 2); ctx.fill();
+ // 사수의 발시 높이(눈높이)와 과녁 고도차를 이용해 시선 각도(θ) 계산
+ const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+ const heightDiff = safeTargetH - launchH; 
+ const angleToTarget = Math.atan2(heightDiff, targetBaseX); // 위를 보면 (+), 아래를 보면 (-) 각도
 
-    if (hasIntersectedTargetPlane) {
-      const localYFromBottom = targetHitMetrics.localY + (TGT_PROJ_H / 2);
-      const markerX = (dprWidth / 2) + (targetHitMetrics.localZ * targetViewScale);
-      const markerY = tBottomY - (localYFromBottom * targetViewScale);
+ // [시각 보정] 스케일은 고정된 채, 시선 각도에 따라 눈에 보이는 과녁의 세로 크기만 변화
+ const visualTilt = TGT_TILT + angleToTarget;
+ const VISUAL_TGT_PROJ_H = TGT_H * Math.cos(visualTilt); 
 
-      if (targetHitMetrics.isHit) {
-        ctx.fillStyle = '#34c759'; ctx.strokeStyle = 'rgba(52, 199, 89, 0.4)'; ctx.lineWidth = 8;
-        ctx.beginPath(); ctx.arc(markerX, markerY, 6, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
-        ctx.fillStyle = '#34c759'; ctx.font = 'bold 13px -apple-system'; ctx.textAlign = 'center'; 
-        ctx.fillText("🎯 관중 (HIT!)", dprWidth / 2, tTopY - 14);
-      } else {
-        ctx.fillStyle = '#ff3b30'; ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)'; ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.arc(markerX, markerY, 5, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
-        ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 12px -apple-system'; ctx.textAlign = 'center'; 
-        ctx.fillText(`❌ 불중 (오차: 좌우 ${targetHitMetrics.localZ.toFixed(2)}m, 바닥높이 ${localYFromBottom.toFixed(2)}m)`, dprWidth / 2, tTopY - 14);
-      }
-    }
+ // [위치 고정] 스케일이 달라지지 않으므로 과녁 바닥선의 화면상 위치는 0.6(60%) 비율로 부동(고정)
+ const defaultBottomRatio = 0.6; 
+ const tBottomY = dprHeight * defaultBottomRatio; 
+
+ const tLeftX = (dprWidth / 2) - (TGT_W / 2 * targetViewScale);
+ const tRightX = (dprWidth / 2) + (TGT_W / 2 * targetViewScale);
+ const tTopY = tBottomY - (VISUAL_TGT_PROJ_H * targetViewScale); // 보이는 세로 크기만 달라짐
+ const w = tRightX - tLeftX; 
+ const h = tBottomY - tTopY; 
+
+ // 과녁판 및 홍심 렌더링 (보이는 형상 비율에 맞춰 타원 압축)
+ ctx.fillStyle = '#ffffff'; ctx.fillRect(tLeftX, tTopY, w, h);
+ ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 2; ctx.strokeRect(tLeftX, tTopY, w, h);
+ ctx.fillStyle = '#1d1d1f'; ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.08, w * 0.8, h * 0.15);
+ ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.3, w * 0.8, h * 0.62);
+ ctx.fillStyle = '#ff3b30'; ctx.beginPath(); 
+ ctx.ellipse(tLeftX + w * 0.5, (tTopY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, h * 0.23 * (VISUAL_TGT_PROJ_H / TGT_H), 0, 0, Math.PI * 2); 
+ ctx.fill();
+
+ if (hasIntersectedTargetPlane) {
+ // 화살 마커 위치도 실제 과녁 면 기준 좌표에서 눈에 보이는 형상 비율로 변환
+ const localYFromBottom = (targetHitMetrics.localY + (TGT_H / 2)) * (VISUAL_TGT_PROJ_H / TGT_H);
+ const markerX = (dprWidth / 2) + (targetHitMetrics.localZ * targetViewScale);
+ const markerY = tBottomY - (localYFromBottom * targetViewScale);
+ if (targetHitMetrics.isHit) {
+ ctx.fillStyle = '#34c759'; ctx.strokeStyle = 'rgba(52, 199, 89, 0.4)'; ctx.lineWidth = 8;
+ ctx.beginPath(); ctx.arc(markerX, markerY, 6, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+ ctx.fillStyle = '#34c759'; ctx.font = 'bold 13px -apple-system'; ctx.textAlign = 'center'; 
+ ctx.fillText(" 관중 (HIT!)", dprWidth / 2, tTopY - 14); 🎯
+ } else {
+ ctx.fillStyle = '#ff3b30'; ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)'; ctx.lineWidth = 6;
+ ctx.beginPath(); ctx.arc(markerX, markerY, 5, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+ ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 12px -apple-system'; ctx.textAlign = 'center'; 
+ const normalYFromBottom = targetHitMetrics.localY + (TGT_H / 2);
+ ctx.fillText(` 불중 (오차: 좌우 ${targetHitMetrics.localZ.toFixed(2)}m, 바닥높이 ${normalYFromBottom.toFixed(2)}m)`, dprWidth / 2, tTopY - 14);
+ }
+ }
+
+ // 표보기 조준선 렌더링
+ const useLosCheck = document.getElementById('useLos');
+ if (useLosCheck && useLosCheck.checked) {
+ const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
+ const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
+ const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
+ const losYVisual = losY * (VISUAL_TGT_PROJ_H / TGT_H);
+ const losScreenY = tBottomY - (losYVisual * targetViewScale);
+ ctx.save();
+ ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 1.5;
+ ctx.beginPath(); ctx.arc(losScreenX, losScreenY, 6, 0, Math.PI * 2); ctx.stroke();
+ ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.arc(losScreenX, losScreenY, 1.5, 0, Math.PI * 2); ctx.fill();
+ ctx.restore();
+ }
+
+      
+ 
  // ==========================================
  // 🎯 [여기에 코드가 추가되었습니다] 표보기 조준 원 그리기
  // ==========================================
