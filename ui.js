@@ -28,17 +28,29 @@ function loadSettings() {
 }
 
 function switchPanel(type) {
-  saveSettings();
-  const panels = ['arrow', 'method', 'env', 'result'];
-  panels.forEach(p => {
-    const el = document.getElementById('panel-' + p);
-    if (el) el.classList.remove('active');
-  });
+ // 순서대로 배치된 탭 리스트 정의
+const tabOrder = ['arrow', 'method', 'env', 'result'];
 
-  const targetPanel = document.getElementById('panel-' + type);
-  if (targetPanel) {
-    targetPanel.classList.add('active');
+// [수정] 가로 이동 애니메이션 방식으로 전환되는 패널 스위칭 함수
+function switchPanel(type) {
+  if (typeof saveSettings === 'function') saveSettings();
+  
+  const track = document.getElementById('panelTrack');
+  const index = tabOrder.indexOf(type);
+  
+  if (track && index !== -1) {
+    // 💡 핵심: 가로축(X) 좌표를 패널 순서에 맞게 -25%씩 왼쪽으로 밀어서 슬라이드 구현
+    track.style.transform = `translateX(-${index * 25}%)`;
+    
+    // 기존 active 클래스 구조 유지 (호환성용)
+    tabOrder.forEach(p => {
+      const el = document.getElementById('panel-' + p);
+      if (el) el.classList.remove('active');
+    });
+    const targetPanel = document.getElementById('panel-' + type);
+    if (targetPanel) targetPanel.classList.add('active');
   }
+
   updateTabActiveStyle(type);
   if (typeof drawScene === 'function') drawScene();
 }
@@ -351,6 +363,58 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         // ➡️ 오른쪽으로 슬라이드: 이전 탭으로 이동 (왼쪽 패널 불러오기)
+        if (currentIndex > 0) {
+          switchPanel(tabOrder[currentIndex - 1]);
+        }
+      }
+    }
+  }, { passive: true });
+});
+// =========================================================================
+// 📱 [신설] 모바일 터치 슬라이드(스와이프) 제어 연동
+// =========================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  const panelContainer = document.getElementById('panel-container');
+  if (!panelContainer) return;
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  // 현재 어떤 패널이 활성화되어 있는지 확인하는 함수
+  function getCurrentActiveTab() {
+    for (let i = 0; i < tabOrder.length; i++) {
+      const el = document.getElementById('panel-' + tabOrder[i]);
+      if (el && el.classList.contains('active')) return tabOrder[i];
+    }
+    return 'arrow';
+  }
+
+  // 손가락이 화면에 닿았을 때 좌표 기억
+  panelContainer.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // 손가락이 화면에서 떨어졌을 때 움직인 방향 계산
+  panelContainer.addEventListener('touchend', (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+
+    // 수평 드래그 판정 기준 (입력창 위아래 스크롤 시 오작동 방지)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+      const currentTab = getCurrentActiveTab();
+      let currentIndex = tabOrder.indexOf(currentTab);
+
+      if (deltaX < 0) {
+        // ⬅️ 왼쪽으로 슥 밀었을 때: 다음 설정 패널로 이동
+        if (currentIndex < tabOrder.length - 1) {
+          switchPanel(tabOrder[currentIndex + 1]);
+        }
+      } else {
+        // ➡️ 오른쪽으로 슥 밀었을 때: 이전 설정 패널로 이동
         if (currentIndex > 0) {
           switchPanel(tabOrder[currentIndex - 1]);
         }
