@@ -468,46 +468,40 @@ ctx.lineWidth = 1.5;
     ctx.restore();
   }
 // =========================================================================
-// 🎯 [오류 수정] 정면도/측면도/과녁도 좌표 100% 동기화 표보기 가이드선 시스템
+// 🎯 과녁 고도차를 완벽 보정한 3D 공간 표보기 가이드선 (최종본)
 // =========================================================================
 const useLosCheck = document.getElementById('useLos');
 if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
     ctx.save();
     
-    // 1. 사수의 출발점 (3D 월드 좌표)
     const startX = 0;
     const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
     const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
     
-    // 2. 과녁의 기하학 정보 가져오기 (바닥 고도 확인)
     const tgtGeo = getDynamicTargetGeometry();
     const targetBaseX = tgtGeo.baseX;
-    const safeTargetH = tgtGeo.height; // 과녁 바닥의 절대 고도 (예: 1.3m)
+    const safeTargetH = tgtGeo.height; // 과녁 자체의 지형 높이 고도차
     
-    // 3. 과녁도에서 입력된 조준점 상대 좌표
     const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
     const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
     
-    // 🔥 [핵심 패치] 측면/정면 뷰에 뿌려줄 때는 과녁 바닥 높이를 더해 절대 고도로 환산!
+    // 🔥 과녁도 상대 높이(losY)에 지형 고도(safeTargetH)를 더해 절대 높이 완벽 정렬!
     const absoluteLosY = safeTargetH + losY; 
     
-    // 4. 스크린 캔버스 좌표로 최종 변환
     const screenStart = toScreen(startX, startY, startZ);
-    const screenEnd = toScreen(targetBaseX, absoluteLosY, losZ); // 보정된 Y값 적용
+    const screenEnd = toScreen(targetBaseX, absoluteLosY, losZ); 
     
-    // 5. 스타일링 및 드로잉
-    ctx.strokeStyle = '#ff9500'; // 주황색
+    ctx.strokeStyle = '#ff9500'; // 표보기 전용 주황색
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]); // 세련된 점선 스타일
+    ctx.setLineDash([4, 4]); // 점선 스타일 적용
     
     ctx.beginPath();
     ctx.moveTo(screenStart.x, screenStart.y);
     ctx.lineTo(screenEnd.x, screenEnd.y);
     ctx.stroke();
     
-    ctx.setLineDash([]); // 점선 스타일 리셋
+    ctx.setLineDash([]); // 스타일 리셋
     
-    // 조준점 끝단에 작은 고정 마커 팁 렌더링
     ctx.fillStyle = '#ff9500';
     ctx.beginPath();
     ctx.arc(screenEnd.x, screenEnd.y, 3, 0, Math.PI * 2);
@@ -515,6 +509,7 @@ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
     
     ctx.restore();
 }
+
 
 }
 
