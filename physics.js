@@ -469,59 +469,6 @@ ctx.lineWidth = 1.5;
   }
 }
 
-   // =========================================================
-  // 🎯 각 도면에 표보기 LOS 조준선 렌더링 (구조 패치 완료)
-  // =========================================================
-  const useLosCheck = document.getElementById('useLos');
-  if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
-      const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
-      const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
-      const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-      const launchZ = parseFloat(document.getElementById('launchZ').value) || 0.0;
-      
-      const pStart = { x: 0, y: launchH, z: launchZ }; 
-      
-      let tgtBaseX = 145.0; 
-      if (typeof TARGET_DIST !== 'undefined') tgtBaseX = TARGET_DIST;
-      
-      const tgtTilt = (typeof TGT_TILT !== 'undefined') ? TGT_TILT : (15 * Math.PI / 180);
-      const tgtH = (typeof TGT_H !== 'undefined') ? TGT_H : 2.66;
-      const tgtMinY = (typeof TARGET_HEIGHT !== 'undefined') ? TARGET_HEIGHT : 0.0;
-      
-      const centerWorldY = tgtMinY + (tgtH / 2) * Math.cos(tgtTilt);
-      const worldLosY = centerWorldY + (losY * Math.cos(tgtTilt));
-      const worldLosX = tgtBaseX - (losY * Math.sin(tgtTilt));
-      const worldLosZ = losZ; 
-      
-      const pEnd = { x: worldLosX, y: worldLosY, z: worldLosZ };
-      
-      if (typeof toScreen === 'function') {
-          const scrStart = toScreen(pStart.x, pStart.y, pStart.z);
-          const scrEnd = toScreen(pEnd.x, pEnd.y, pEnd.z);
-          
-          ctx.save();
-          ctx.strokeStyle = '#ff9500'; // 주황색 선
-          ctx.lineWidth = 1.5;
-          
-          ctx.beginPath();
-          ctx.moveTo(scrStart.x, scrStart.y);
-          ctx.lineTo(scrEnd.x, scrEnd.y);
-          ctx.stroke();
-          
-          ctx.fillStyle = '#ff9500';
-          ctx.beginPath();
-          ctx.arc(scrEnd.x, scrEnd.y, 3, 0, Math.PI * 2);
-          ctx.fill();
-          
-          ctx.restore();
-      }
-  }
-  // =========================================================
-
-  ctx.restore(); // ⚠️ [핵심 복구] 기존 drawScene 최상단 세이브 영역을 닫아주는 필수 코드
-} // ⚠️ [핵심 복구] drawScene 함수를 완전히 종료하는 대괄호 마감
-
-
 // 캔버스 초기 크기 반영 지연 제어
 setTimeout(() => {
     if (typeof loadSettings === 'function') loadSettings();
