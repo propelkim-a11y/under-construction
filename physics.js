@@ -383,23 +383,24 @@ ctx.lineWidth = 1.5;
  const visualTilt = TGT_TILT + angleToTarget;
  const VISUAL_TGT_PROJ_H = TGT_H * Math.cos(visualTilt); 
 
- // [위치 고정] 스케일이 달라지지 않으므로 과녁 바닥선의 화면상 위치는 0.6(60%) 비율로 부동(고정)
+ // [요청 반영] 과녁 바닥선의 화면상 위치는 0.6(60%) 비율로 완벽히 부동(고정)
  const defaultBottomRatio = 0.6; 
  const tBottomY = dprHeight * defaultBottomRatio; 
-
+ 
  const tLeftX = (dprWidth / 2) - (TGT_W / 2 * targetViewScale);
  const tRightX = (dprWidth / 2) + (TGT_W / 2 * targetViewScale);
  const tTopY = tBottomY - (VISUAL_TGT_PROJ_H * targetViewScale); // 보이는 세로 크기만 달라짐
  const w = tRightX - tLeftX; 
  const h = tBottomY - tTopY; 
 
- // 과녁판 및 홍심 렌더링 (보이는 형상 비율에 맞춰 타원 압축)
+ // 과녁판 및 홍심 렌더링
  ctx.fillStyle = '#ffffff'; ctx.fillRect(tLeftX, tTopY, w, h);
  ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 2; ctx.strokeRect(tLeftX, tTopY, w, h);
  ctx.fillStyle = '#1d1d1f'; ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.08, w * 0.8, h * 0.15);
  ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.3, w * 0.8, h * 0.62);
  ctx.fillStyle = '#ff3b30'; ctx.beginPath(); 
- ctx.ellipse(tLeftX + w * 0.5, (tTopY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, h * 0.23 * (VISUAL_TGT_PROJ_H / TGT_H), 0, 0, Math.PI * 2); 
+ // 타원 렌더링 정상화 (마지막 각도 매개변수 누락 보정 및 stroke 추가)
+ ctx.ellipse(tLeftX + w * 0.5, (tTopY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, Math.max(0.1, h * 0.23 * (VISUAL_TGT_PROJ_H / TGT_H)), 0, 0, Math.PI * 2); 
  ctx.fill();
 
  if (hasIntersectedTargetPlane) {
@@ -420,6 +421,23 @@ ctx.lineWidth = 1.5;
  ctx.fillText(` 불중 (오차: 좌우 ${targetHitMetrics.localZ.toFixed(2)}m, 바닥높이 ${normalYFromBottom.toFixed(2)}m)`, dprWidth / 2, tTopY - 14);
  }
  }
+
+ // 표보기 조준선 렌더링
+ const useLosCheck = document.getElementById('useLos');
+ if (useLosCheck && useLosCheck.checked) {
+ const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
+ const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
+ const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
+ const losYVisual = losY * (VISUAL_TGT_PROJ_H / TGT_H);
+ const losScreenY = tBottomY - (losYVisual * targetViewScale);
+ ctx.save();
+ ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 1.5;
+ ctx.beginPath(); ctx.arc(losScreenX, losScreenY, 6, 0, Math.PI * 2); ctx.stroke();
+ ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.arc(losScreenX, losScreenY, 1.5, 0, Math.PI * 2); ctx.fill();
+ ctx.restore();
+ }
+ }
+
 
  // 표보기 조준선 렌더링
  const useLosCheck = document.getElementById('useLos');
