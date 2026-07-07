@@ -71,41 +71,86 @@ function getDynamicTargetGeometry() {
     return { baseX: targetBaseX, height: safeTargetH };
 }
 
+// =========================================================
+// [수정 완료] 화살 발시 기능 및 "슈우욱" 오디오 시스템 탑재
+// =========================================================
 function fireArrow() {
-    if (isFlying) cancelAnimationFrame(animationFrameId);
-    if (typeof saveSettings === 'function') saveSettings();
+ if (isFlying) cancelAnimationFrame(animationFrameId);
+ if (typeof saveSettings === 'function') saveSettings();
+ 
+ // --------------------------------------------------
+ // 💨 [발시 효과음] 사대를 묵직하게 가르고 나가는 '슈우욱~~' 장음 필터
+ // --------------------------------------------------
+ try {
+ const AudioContext = window.AudioContext || window.webkitAudioContext;
+ if (AudioContext) {
+ const audioCtx = new AudioContext();
+ 
+ // 1. 화이트 노이즈 버퍼 생성 (0.65초로 바람 소리 구현)
+ const bufferSize = audioCtx.sampleRate * 0.65; 
+ const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+ const data = buffer.getChannelData(0);
+ for (let i = 0; i < bufferSize; i++) {
+ data[i] = Math.random() * 2 - 1;
+ }
+ 
+ const noiseSource = audioCtx.createBufferSource();
+ noiseSource.buffer = buffer;
+ 
+ // 2. 대역통과 필터 세팅 (1600Hz -> 300Hz로 떨어지며 슈우욱 소리 연출)
+ const filter = audioCtx.createBiquadFilter();
+ filter.type = 'lowpass'; 
+ filter.frequency.setValueAtTime(1600, audioCtx.currentTime);
+ filter.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.6);
+ filter.Q.setValueAtTime(6, audioCtx.currentTime);
 
-    const v0 = parseFloat(document.getElementById('velocity').value) || 50;
-    const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
-    const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
-    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
-    
-    const pitchRad = (angleDeg * Math.PI) / 180;
-    const yawRad = (yawDeg * Math.PI) / 180;
+ // 3. 볼륨 제어 (부드럽게 밀어주다가 스르륵 사라지는 잔향)
+ const gainNode = audioCtx.createGain();
+ gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+ gainNode.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.12);
+ gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.65);
 
-    arrowState.x = 0; 
-    arrowState.y = launchH; 
-    arrowState.z = launchZ;
-    
-    arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
-    arrowState.vy = v0 * Math.sin(pitchRad);
-    arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
-    
-    arrowState.pitch = pitchRad; 
-    arrowState.yaw = yawRad;
+ // 노드 연결 및 재생
+ noiseSource.connect(filter).connect(gainNode).connect(audioCtx.destination);
+ noiseSource.start();
+ noiseSource.stop(audioCtx.currentTime + 0.65);
+ }
+ } catch (e) {
+ console.error("발시 효과음 재생 실패:", e);
+ }
+ // --------------------------------------------------
 
-    flightMetrics = { maxDistance: 0, maxHeight: launchH, sideDeviation: 0, flightTime: 0, impactVelocity: v0, impactEnergy: 0 };
-    targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
-    hasReachedTargetX = false;
-    hasReachedTargetY = false;
-    hasIntersectedTargetPlane = false;
-    
-    updateResultUI();
-    trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
-    isFlying = true;
-    animate();
+ // [기존 물리 연산 및 초기화 로직 유지]
+ const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+ const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
+ const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
+ const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+ const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
+ 
+ const pitchRad = (angleDeg * Math.PI) / 180;
+ const yawRad = (yawDeg * Math.PI) / 180;
+ arrowState.x = 0; 
+ arrowState.y = launchH; 
+ arrowState.z = launchZ;
+ 
+ arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
+ arrowState.vy = v0 * Math.sin(pitchRad);
+ arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
+ 
+ arrowState.pitch = pitchRad; 
+ arrowState.yaw = yawRad;
+ flightMetrics = { maxDistance: 0, maxHeight: launchH, sideDeviation: 0, flightTime: 0, impactVelocity: v0, impactEnergy: 0 };
+ targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
+ hasReachedTargetX = false;
+ hasReachedTargetY = false;
+ hasIntersectedTargetPlane = false;
+ 
+ updateResultUI();
+ trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
+ isFlying = true;
+ animate();
 }
+
 
 function animate() {
     if (!isFlying) return;
