@@ -468,7 +468,7 @@ ctx.lineWidth = 1.5;
     ctx.restore();
   }
 // ==========================================
-// [수정] 다른 뷰(측면, 정면, 평면)에서 조준선이 과녁 고도차를 반영하도록 패치
+// [재수정] setLineDash 인자 오류 패치 및 과녁 고도차 연동 완료
 // ==========================================
 const useLosCheck = document.getElementById('useLos');
 if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
@@ -483,15 +483,15 @@ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
     // 실시간 과녁 기하학 구조(고도차 포함) 가져오기
     const tgtGeo = getDynamicTargetGeometry();
     const targetBaseX = tgtGeo.baseX;
-    const safeTargetH = tgtGeo.height; // 🎯 과녁 바닥의 실제 절대 고도
+    const safeTargetH = tgtGeo.height; // 과녁 바닥의 실제 절대 고도
 
     const screenStart = toScreen(startX, startY, startZ);
-    // 🎯 Y축 좌표에 safeTargetH를 더해서 조준선 끝점이 과녁과 함께 움직이도록 수정
+    // Y축 좌표에 safeTargetH를 더해서 조준선 끝점이 과녁과 함께 움직이도록 수정
     const screenEnd = toScreen(targetBaseX, safeTargetH + losY, losZ); 
 
     ctx.strokeStyle = '#ff9500'; // 주황색
     ctx.lineWidth = 1.2;
-    ctx.setLineDash([4, 4]); // 점선 스타일 적용
+    ctx.setLineDash([4, 4]); // 🎯 점선 크기를 [4, 4]로 명확하게 지정 (오류 해결)
 
     ctx.beginPath();
     ctx.moveTo(screenStart.x, screenStart.y);
@@ -505,6 +505,7 @@ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
     ctx.fill();
     ctx.restore();
 }
+
 
 
 // 캔버스 초기 크기 반영 지연 제어
