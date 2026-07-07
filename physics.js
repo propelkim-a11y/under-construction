@@ -467,46 +467,36 @@ ctx.lineWidth = 1.5;
     ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-16, -4); ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.fill();
     ctx.restore();
   }
-// ==========================================
-// [최종 검토 완료] 중복 선언(const) 에러 완벽 해결 및 고도차 반영본
-// ==========================================
-const useLosCheckBottom = document.getElementById('useLos'); // 🎯 충돌 방지를 위해 변수명 변경
-if (useLosCheckBottom && useLosCheckBottom.checked && currentView !== 'target') {
-    ctx.save();
-    const startX = 0;
-    const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-    const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
-    const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
-    const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
-    
-    // 실시간 과녁 고도차 계산 연동
-    const tgtGeoInfo = getDynamicTargetGeometry();
-    const targetBaseX = tgtGeoInfo.baseX;
-    const safeTargetH = tgtGeoInfo.height; // 과녁 바닥의 절대 고도
-
-    const screenStart = toScreen(startX, startY, startZ);
-    // 🎯 Y축 연산에 과녁 바닥 고도(safeTargetH)를 더해 정면/측면/평면도 위치를 일치시킵니다.
-    const screenEnd = toScreen(targetBaseX, safeTargetH + losY, losZ);
-
-    ctx.strokeStyle = '#ff9500'; // 주황색
-    ctx.lineWidth = 1.2;
-    
-    // 브라우저 캔버스 표준 배열 방식으로 안전하게 점선 처리
-    ctx.setLineDash([4, 4]); 
-
-    ctx.beginPath();
-    ctx.moveTo(screenStart.x, screenStart.y);
-    ctx.lineTo(screenEnd.x, screenEnd.y);
-    ctx.stroke();
-
-    ctx.setLineDash([]); // 점선 스타일 리셋
-    ctx.fillStyle = '#ff9500';
-    ctx.beginPath();
-    ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+     const useLosCheck = document.getElementById('useLos');
+ if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
+     ctx.save();
+     const startX = 0;
+     const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+     const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
+     const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
+     const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
+     const targetBaseX = getDynamicTargetGeometry().baseX;
+     
+     const screenStart = toScreen(startX, startY, startZ);
+     const screenEnd = toScreen(targetBaseX, losY, losZ);
+     
+     ctx.strokeStyle = '#ff9500'; // 주황색
+     ctx.lineWidth = 1.2;
+     ctx.setLineDash([4, 4]); // 점선 스타일 적용
+     
+     ctx.beginPath();
+     ctx.moveTo(screenStart.x, screenStart.y);
+     ctx.lineTo(screenEnd.x, screenEnd.y);
+     ctx.stroke();
+     
+     ctx.setLineDash([]); // 스타일 리셋
+     ctx.fillStyle = '#ff9500';
+     ctx.beginPath();
+     ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
+     ctx.fill();
+     ctx.restore();
+ }
 }
-
 
 // 캔버스 초기 크기 반영 지연 제어
 setTimeout(() => {
