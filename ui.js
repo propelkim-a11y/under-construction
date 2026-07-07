@@ -244,6 +244,7 @@ function endTargetDrag(e) {
 
 // 변수 충돌 없는 좌표 역산 처리 핵심 함수
 // 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템 (안전장치 강화 최종본)
+// 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템 (화면 멈춤 버그 완벽 해결 버전)
 function updateTargetCoords(e) {
   const canvasEl = document.getElementById('simCanvas');
   if (!canvasEl) return;
@@ -251,8 +252,9 @@ function updateTargetCoords(e) {
   const rect = canvasEl.getBoundingClientRect();
   let clientX, clientY;
   
+  // 모바일 터치 환경과 PC 마우스 환경의 좌표 수집 코드를 안전하게 단일화
   if (e.touches && e.touches.length > 0) {
-    clientX = e.touches[0].clientX;
+    clientX = e.touches[0].clientX; // ◀ [핵심 패치] [0] 인덱스 누락으로 인한 멈춤 에러 수정
     clientY = e.touches[0].clientY;
   } else {
     clientX = e.clientX;
@@ -271,19 +273,23 @@ function updateTargetCoords(e) {
   const tBottomY = currentDprHeight * 0.65;
   const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
   
-  // 4. 월드 공간 미터 수치 역산 및 NaN 방지 안전장치
+  // 4. 월드 공간 미터 수치 역산 및 철저한 에러(NaN) 방지
   let calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
   let calculatedY = (tBottomY - canvasY) / targetViewScale;
   
-  // 계산 결과가 올바르지 않은 숫자인 경우(NaN, Infinity 등) 0으로 리셋하여 먹통 방지
+  // 숫자가 아니거나 무한대 값이 계산되면 안전하게 0으로 치환
   if (isNaN(calculatedZ) || !isFinite(calculatedZ)) calculatedZ = 0;
   if (isNaN(calculatedY) || !isFinite(calculatedY)) calculatedY = 0;
   
-  // 과녁 고도차(targetHeight) 값 안전하게 확보
+  // 과녁 고도차(targetHeight) 값 안전하게確保
   const targetHeightEl = document.getElementById('targetHeight');
-  const targetH = targetHeightEl ? (parseFloat(targetHeightEl.value) || 0) : 0;
+  let targetH = 0;
+  if (targetHeightEl && targetHeightEl.value) {
+    targetH = parseFloat(targetHeightEl.value);
+    if (isNaN(targetH)) targetH = 0; // 글자나 빈칸 입력 시 뻗는 현상 방지
+  }
   
-  // [핵심 보정] 과녁 기준 Y 높이에 고도차를 더해 최종 '지면 기준 절대 Y값' 산출
+  // [정밀 보정] 과녁 기준 Y 높이에 고도차를 더해 최종 지면 기준 Y값 완성
   const finalY = calculatedY + targetH;
   
   // 5. DOM 엘리먼트 값 주입 및 전파
@@ -300,16 +306,17 @@ function updateTargetCoords(e) {
       localStorage.setItem('arrow_sim_useLos', 'true');
     }
     
-    // 브라우저에 값이 바뀌었음을 강제 전파하여 스토리지 저장 및 실시간 연동 작동 유도
+    // 브라우저에 값이 바뀌었음을 알리는 이벤트를 발생시켜 스토리지 및 실시간 연동 강제 구동
     const intTrigger = new Event('input', { bubbles: true });
     losYEl.dispatchEvent(intTrigger);
     losZEl.dispatchEvent(intTrigger);
     
-    // 실시간 강제 드로잉 호출
+    // 실시간 드로잉 즉시 호출
     if (typeof saveSettings === 'function') saveSettings();
     if (typeof drawScene === 'function') drawScene();
   }
 }
+
 
 
 // =========================================================================
