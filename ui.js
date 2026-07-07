@@ -244,60 +244,75 @@ function endTargetDrag(e) {
 
 // 변수 충돌 없는 좌표 역산 처리 핵심 함수
 function updateTargetCoords(e) {
-    const canvasEl = document.getElementById('simCanvas');
-    if (!canvasEl) return;
-    
-    const rect = canvasEl.getBoundingClientRect();
-    let clientX, clientY;
-    
-    if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-    } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-    }
-    
-    // 1. [핵심 패치] ui.js 내부에서 직접 안전하게 Canvas 해상도 너비/높이 확보
-    const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
-    const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
-    
-    // 2. 마우스 CSS 픽셀 위치 환산
-    const canvasX = clientX - rect.left;
-    const canvasY = clientY - rect.top;
-    
-    // 3. physics.js 물리 레이아웃 비례 연산 동기화
-    const tBottomY = currentDprHeight * 0.65;
-    const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
-    
-    // 4. 월드 공간 미터 수치 역산
-    const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
-    const calculatedY = (tBottomY - canvasY) / targetViewScale;
-    
-    // 5. DOM 엘리먼트 값 주입 및 전파
-    const losYEl = document.getElementById('losTargetY');
-    const losZEl = document.getElementById('losTargetZ');
-    const useLosEl = document.getElementById('useLos');
-    
-    if (losYEl && losZEl) {
-        losYEl.value = calculatedY.toFixed(2);
-        losZEl.value = calculatedZ.toFixed(2);
-        
-        if (useLosEl && !useLosEl.checked) {
-            useLosEl.checked = true;
-            localStorage.setItem('arrow_sim_useLos', 'true');
-        }
-        
-        // 브라우저에 값이 바뀌었음을 강제 전파하여 스토리지 저장 작동 유도
-        const intTrigger = new Event('input', { bubbles: true });
-        losYEl.dispatchEvent(intTrigger);
-        losZEl.dispatchEvent(intTrigger);
+ const canvasEl = document.getElementById('simCanvas');
+ if (!canvasEl) return;
 
-        // 실시간 강제 드로잉 호출
-        if (typeof saveSettings === 'function') saveSettings();
-        if (typeof drawScene === 'function') drawScene();
-    }
+ const rect = canvasEl.getBoundingClientRect();
+ let clientX, clientY;
+
+ if (e.touches && e.touches.length > 0) {
+ clientX = e.touches[0].clientX;
+ clientY = e.touches[0].clientY;
+ } else {
+ clientX = e.clientX;
+ clientY = e.clientY;
+ }
+
+ const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
+ const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
+
+ const canvasX = clientX - rect.left;
+ const canvasY = clientY - rect.top;
+
+ const TGT_H = 2.667;
+ const TGT_TILT = 15 * Math.PI / 180;
+ const TARGET_SLANT_R = 145;
+
+ const targetHInput = parseFloat(document.getElementById('targetHeight').value);
+ const targetH = isNaN(targetHInput) ? 0 : targetHInput;
+ const safeTargetH = Math.min(targetH, TARGET_SLANT_R - 0.1);
+ const targetBaseX = Math.sqrt(Math.pow(TARGET_SLANT_R, 2) - Math.pow(safeTargetH, 2));
+
+ const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+ const heightDiff = safeTargetH - launchH;
+ const angleToTarget = Math.atan2(heightDiff, targetBaseX);
+
+ const visualTilt = TGT_TILT + angleToTarget;
+ const VISUAL_TGT_PROJ_H = TGT_H * Math.cos(visualTilt);
+
+ // [요청 반영] physics.js와 일치하게 바닥 비율을 0.6(60%)으로 고정
+ const defaultBottomRatio = 0.6;
+ const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
+ const tBottomY = currentDprHeight * defaultBottomRatio; 
+
+ const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
+ const calculatedYVisual = (tBottomY - canvasY) / targetViewScale;
+
+ // 겉보기 크기 왜곡 비율을 역산하여 순수 물리적 미터 높이(calculatedY) 도출
+ const calculatedY = calculatedYVisual * (TGT_H / VISUAL_TGT_PROJ_H);
+
+ const losYEl = document.getElementById('losTargetY');
+ const losZEl = document.getElementById('losTargetZ');
+ const useLosEl = document.getElementById('useLos');
+
+ if (losYEl && losZEl) {
+ losYEl.value = calculatedY.toFixed(2);
+ losZEl.value = calculatedZ.toFixed(2);
+
+ if (useLosEl && !useLosEl.checked) {
+ useLosEl.checked = true;
+ localStorage.setItem('arrow_sim_useLos', 'true');
+ }
+
+ const intTrigger = new Event('input', { bubbles: true });
+ losYEl.dispatchEvent(intTrigger);
+ losZEl.dispatchEvent(intTrigger);
+
+ if (typeof saveSettings === 'function') saveSettings();
+ if (typeof drawScene === 'function') drawScene();
+ }
 }
+
 // =========================================================================
 // 📱 [신설] 설정 패널 하단 좌우 터치 슬라이드(스와이프) 전환 제어 시스템
 // =========================================================================
