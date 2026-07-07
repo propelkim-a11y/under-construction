@@ -29,7 +29,7 @@ function resizeCanvas() {
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     dprWidth = rect.width;
     dprHeight = rect.height;
-    ;
+    drawScene();
 }
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', resizeCanvas);
@@ -195,7 +195,7 @@ function animate() {
     if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
     if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
 
-    ;
+    drawScene();
     if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
 }
 
@@ -452,61 +452,21 @@ ctx.lineWidth = 1.5;
   }
 
   // 실시간 화살 오브젝트 렌더링
-  
-        const arrowPos = toScreen(arrowState.x, arrowState.y, arrowState.z);
-        ctx.save(); ctx.translate(arrowPos.x, arrowPos.y);
-        
-        let angleRad = 0; 
-        if (currentView === 'side') angleRad = -arrowState.pitch; 
-        else if (currentView === 'top') angleRad = -arrowState.yaw; 
-        else if (currentView === 'front') angleRad = Math.atan2(arrowState.vz, arrowState.vy);
-        
-        ctx.rotate(angleRad);
-        ctx.strokeStyle = '#515154'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-20, 0); 
-        ctx.lineTo(0, 0); ctx.stroke();
-        ctx.fillStyle = '#1d1d1f'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-6, -3); 
-        ctx.lineTo(-6, 3); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-16, -4); 
-        ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.fill();
-        ctx.restore();
-    }
-
- x.fill();
-        ctx.restore();
-    }
-
-    // =========================================================================
-    // 🎯 [여기에 먹통 해결 패치 코드를 통째로 붙여넣으세요!]
-    // 기존에 잘못 넣었던 오렌지색 선 관련 코드가 있다면 지우고 이 자리에 넣습니다.
-    // =========================================================================
-    const useLosCheck = document.getElementById('useLos');
-    if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
-        ctx.save();
-        const startX = 0;
-        const startY = parseFloat(document.getElementById('launchHeight')?.value) || 1.5;
-        const startZ = parseFloat(document.getElementById('launchZ')?.value) || 0;
-        const losY = parseFloat(document.getElementById('losTargetY')?.value) || 1.3;
-        const losZ = parseFloat(document.getElementById('losTargetZ')?.value) || 0.0;
-        let actualWorldX = 145; let actualWorldY = 1.3; let actualWorldZ = losZ;
-        if (typeof getDynamicTargetGeometry === 'function') {
-            const tgtGeo = getDynamicTargetGeometry();
-            const targetBaseX = tgtGeo.baseX; const safeTargetH = tgtGeo.height; 
-            const tiltRad = (typeof TGT_TILT !== 'undefined') ? TGT_TILT : (15 * Math.PI / 180);
-            const tgtH = (typeof TGT_H !== 'undefined') ? TGT_H : 2.0;
-            const centerWorldY = safeTargetH + (tgtH / 2) * Math.cos(tiltRad);
-            actualWorldY = centerWorldY + (losY * Math.cos(tiltRad));
-            actualWorldX = targetBaseX + (tgtH / 2 * Math.sin(tiltRad)) + (losY * Math.sin(tiltRad));
-        }
-        if (typeof toScreen === 'function') {
-            const screenStart = toScreen(startX, startY, startZ);
-            const screenEnd = toScreen(actualWorldX, actualWorldY, actualWorldZ);
-            ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 1.5;
-            ctx.setLineDash([5, 5]); 
-            ctx.beginPath(); ctx.moveTo(screenStart.x, screenStart.y); ctx.lineTo(screenEnd.x, screenEnd.y); ctx.stroke();
-            ctx.setLineDash([]); ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.arc(screenEnd.x, screenEnd.y, 3.5, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.restore();
-    }
+  if (currentView !== 'target') {
+    const arrowPos = toScreen(arrowState.x, arrowState.y, arrowState.z);
+    ctx.save(); ctx.translate(arrowPos.x, arrowPos.y);
+    
+    let angleRad = 0; 
+    if (currentView === 'side') angleRad = -arrowState.pitch; 
+    else if (currentView === 'top') angleRad = -arrowState.yaw; 
+    else if (currentView === 'front') angleRad = Math.atan2(arrowState.vz, arrowState.vy);
+    
+    ctx.rotate(angleRad);
+    ctx.strokeStyle = '#515154'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(0, 0); ctx.stroke();
+    ctx.fillStyle = '#1d1d1f'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-6, -3); ctx.lineTo(-6, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-16, -4); ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.fill();
+    ctx.restore();
+  }
 }
 
 // 캔버스 초기 크기 반영 지연 제어
