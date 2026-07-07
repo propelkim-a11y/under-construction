@@ -434,7 +434,7 @@ ctx.lineWidth = 1.5;
       const markerX = (dprWidth / 2) + (targetHitMetrics.localZ * targetViewScale);
       const markerY = tBottomY - (localYFromBottom * targetViewScale);
 
-       if (targetHitMetrics.isHit) {
+        if (targetHitMetrics.isHit) {
  // ==================================================
  // 🔊 [관중 효과음] 별도 사운드 파일 없이 청아한 '띵~' 소리 실시간 생성
  // ==================================================
@@ -455,7 +455,7 @@ ctx.lineWidth = 1.5;
  osc2.type = 'triangle';
  osc2.frequency.setValueAtTime(1220, audioCtx.currentTime);
 
- // 볼륨 감쇄 제어 (부드럽고 자연스럽게 사라지도록 설정)
+ // 볼륨 감쇄 제어 (부드럽게 사라지도록 설정)
  gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
  gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
  
@@ -484,12 +484,12 @@ ctx.lineWidth = 1.5;
  ctx.fillText(" 관중 (HIT!)", dprWidth / 2, tTopY - 14); 🎯
  } else {
  // ==================================================
- // 💨 [불중 효과음] 화살이 바람을 가르며 비껴가는 '휙~' 소리 실시간 생성
+ // 💨 [불중 효과음] 화살이 바람을 가르며 비껴가는 '휙~' 소리 (오타 수정 완료)
  // ==================================================
  try {
  const AudioContext = window.AudioContext || window.webkitAudioContext;
  if (AudioContext) {
- const audioCtx = new Context();
+ const audioCtx = new AudioContext(); // <- 이 부분의 오타를 안전하게 고쳤습니다.
  const osc = audioCtx.createOscillator();
  const gainNode = audioCtx.createGain();
  
