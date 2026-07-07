@@ -467,36 +467,61 @@ ctx.lineWidth = 1.5;
     ctx.fillStyle = '#ff9500'; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-16, -4); ctx.lineTo(-10, -4); ctx.lineTo(-14, 0); ctx.fill();
     ctx.restore();
   }
-     const useLosCheck = document.getElementById('useLos');
- if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
-     ctx.save();
-     const startX = 0;
-     const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-     const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
-     const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
-     const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
-     const targetBaseX = getDynamicTargetGeometry().baseX;
-     
-     const screenStart = toScreen(startX, startY, startZ);
-     const screenEnd = toScreen(targetBaseX, losY, losZ);
-     
-     ctx.strokeStyle = '#ff9500'; // 주황색
-     ctx.lineWidth = 1.2;
-     ctx.setLineDash([4, 4]); // 점선 스타일 적용
-     
-     ctx.beginPath();
-     ctx.moveTo(screenStart.x, screenStart.y);
-     ctx.lineTo(screenEnd.x, screenEnd.y);
-     ctx.stroke();
-     
-     ctx.setLineDash([]); // 스타일 리셋
-     ctx.fillStyle = '#ff9500';
-     ctx.beginPath();
-     ctx.arc(screenEnd.x, screenEnd.y, 2.5, 0, Math.PI * 2);
-     ctx.fill();
-     ctx.restore();
- }
+// ==========================================
+// [1단계 패치] 3D 뷰별 조준선(LOS) 미스매치 교정 시스템
+// ==========================================
+const useLosCheck = document.getElementById('useLos');
+if (useLosCheck && useLosCheck.checked && currentView !== 'target') {
+    ctx.save();
+    
+    // 1. 사수의 출발점 물리 좌표 확보
+    const startX = 0;
+    const startY = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+    const startZ = parseFloat(document.getElementById('launchZ').value) || 0;
+    
+    // 2. 표보기 입력값(과녁 상대 좌표) 확보
+    const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
+    const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
+    
+    // 3. 과녁의 현재 물리적 위치 역산
+    const tgtGeo = getDynamicTargetGeometry();
+    const targetBaseX = tgtGeo.baseX;      // 사대로부터 과녁 바닥까지의 수평 거리
+    const safeTargetH = tgtGeo.height;     // 과녁 고도차 (바닥 높이)
+    
+    // [핵심 교정] 과녁 확대도(Target View)의 물리적 매핑 기준과 동일하게 세계관 좌표 재계산
+    // 과녁 중심의 실제 높이 = 과녁 고도차 + (실제 투영 높이 / 2)
+    const centerWorldY = safeTargetH + (TGT_H / 2) * Math.cos(TGT_TILT);
+    
+    // 4. 표보기 조준점이 가리키는 3차원 절대 공간 좌표 결정
+    const absoluteLosX = targetBaseX;
+    const absoluteLosY = centerWorldY + losY; // 과녁 중심으로부터의 Y축 오차 반영
+    const absoluteLosZ = startZ + losZ;       // 사수 위치 기준 좌우 편차 동기화
+
+    // 5. 통일된 화면 변환 공식 적용
+    const screenStart = toScreen(startX, startY, startZ);
+    const screenEnd = toScreen(absoluteLosX, absoluteLosY, absoluteLosZ);
+    
+    // 6. 점선 렌더링
+    ctx.strokeStyle = '#ff9500'; // 주황색
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);     // 깔끔한 대시 스타일
+    
+    ctx.beginPath();
+    ctx.moveTo(screenStart.x, screenStart.y);
+    ctx.lineTo(screenEnd.x, screenEnd.y);
+    ctx.stroke();
+    
+    ctx.setLineDash([]);         // 스타일 리셋
+    
+    // 7. 겨냥점 과녁 표식 렌더링
+    ctx.fillStyle = '#ff9500';
+    ctx.beginPath();
+    ctx.arc(screenEnd.x, screenEnd.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
 }
+
 
 // 캔버스 초기 크기 반영 지연 제어
 setTimeout(() => {
