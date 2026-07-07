@@ -1,3 +1,110 @@
+const INPUT_IDS = [
+  'weight', 'diameter', 'dragCoeff', 'liftCoeff',
+  'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
+  'windX', 'windY', 'targetHeight', 'airDensity',
+  'losTargetY', 'losTargetZ' // 💡 LOS 수동 입력 ID 추가 (useLos는 체크박스이므로 별도 처리하거나 제외)
+];
+
+function saveSettings() {
+  INPUT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) localStorage.setItem('arrow_sim_' + id, el.value);
+  });
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
+}
+
+function loadSettings() {
+  INPUT_IDS.forEach(id => {
+    const savedValue = localStorage.getItem('arrow_sim_' + id);
+    const el = document.getElementById(id);
+    if (el && savedValue !== null) {
+      el.value = savedValue;
+    }
+  });
+    const useLosEl = document.getElementById('useLos');
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
+}
+
+function switchPanel(type) {
+  saveSettings();
+  const panels = ['arrow', 'method', 'env', 'result'];
+  panels.forEach(p => {
+    const el = document.getElementById('panel-' + p);
+    if (el) el.classList.remove('active');
+  });
+
+  const targetPanel = document.getElementById('panel-' + type);
+  if (targetPanel) {
+    targetPanel.classList.add('active');
+  }
+  updateTabActiveStyle(type);
+  if (typeof drawScene === 'function') drawScene();
+}
+
+function updateTabActiveStyle(type) {
+  const tabItems = document.querySelectorAll('.tab-bar .tab-item');
+  tabItems.forEach(item => item.classList.remove('active'));
+  const typeOrder = ['arrow', 'method', 'env', 'result'];
+  const activeIndex = typeOrder.indexOf(type);
+  if (activeIndex !== -1 && tabItems[activeIndex]) {
+    tabItems[activeIndex].classList.add('active');
+  }
+}
+
+let currentView = 'side';
+function changeView(viewType, element) {
+  const buttons = document.querySelectorAll('.segmented-control .segment-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  if (element) element.classList.add('active');
+  currentView = viewType;
+  if (typeof drawScene === 'function') drawScene();
+}
+
+const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeight', 'losTargetY', 'losTargetZ'];
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) {
+        useLosEl.addEventListener('change', () => {
+           if (typeof saveSettings === 'function') saveSettings();
+           if (typeof drawScene === 'function') drawScene();
+  });
+}
+    
+  INPUT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        if (NEGATIVE_ALLOWED_IDS.includes(id)) {
+          let val = el.value;
+          val = val.replace(/[^0-9.-]/g, '');
+          val = val.replace(/(?!^)-/g, '');
+          const parts = val.split('.');
+          if (parts.length > 2) {
+            val = parts[0] + '.' + parts.slice(1).join('');
+          }
+          el.value = val;
+        }
+        saveSettings();
+        if (typeof drawScene === 'function') drawScene();
+      });
+    }
+  });
+
+  // =========================================================================
+  // [💡 위치 기억 기능 추가] 무제한 스크린 프리 드래그 제어 시스템
+  // =========================================================================
+  const dragBtn = document.getElementById('draggableFireBtn');
+  if (!dragBtn) return;
+
+  let isDragging = false;
+  let hasMoved = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
   // 이전 사용 위치 복원 함수
   function loadButtonPosition() {
     const savedLeft = localStorage.getItem('arrow_sim_btn_left');
@@ -7,116 +114,25 @@
       dragBtn.style.left = savedLeft;
       dragBtn.style.top = savedTop;
       dragBtn.style.right = 'auto'; // 초기 CSS 우측 고정 해제
-      dragBtn.style.bottom = 'auto'; // 초기 CSS 하단 고정 해제
     }
   }
 
   function startDrag(e) {
     isDragging = true;
     hasMoved = false;
-    
-    // 터치 이벤트와 마우스 이벤트 대응
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
     startX = clientX;
     startY = clientY;
-    
     const rect = dragBtn.getBoundingClientRect();
     initialLeft = rect.left;
     initialTop = rect.top;
-
-    // 드래그 중 스타일 적용 (선택 사항)
-    dragBtn.style.transition = 'none'; 
-
-    // 전역 이벤트 리스너 등록 (마우스가 버튼을 벗어나도 부드럽게 추적)
-    document.addEventListener('mousemove', onDrag);
-    document.addEventListener('touchmove', onDrag, { passive: false });
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchend', endDrag);
   }
 
-  function onDrag(e) {
-    if (!isDragging) return;
-    
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // 이동 거리 계산
-    const deltaX = clientX - startX;
-    const deltaY = clientY - startY;
-    
-    // 미세한 움직임이 발생하면 이동한 것으로 간주 (클릭과 드래그 구분용)
-    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
-      hasMoved = true;
-    }
-    
-    // 새 위치 계산
-    let newLeft = initialLeft + deltaX;
-    let newTop = initialTop + deltaY;
-    
-    // [보정] 버튼이 브라우저 화면 밖으로 탈출하는 것을 방지
-    const maxLeft = window.innerWidth - dragBtn.offsetWidth;
-    const maxTop = window.innerHeight - dragBtn.offsetHeight;
-    
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newTop = Math.max(0, Math.min(newTop, maxTop));
-    
-    // 스타일 반영
-    dragBtn.style.left = `${newLeft}px`;
-    dragBtn.style.top = `${newTop}px`;
-    dragBtn.style.right = 'auto';
-    dragBtn.style.bottom = 'auto';
-    
-    // 모바일 스크롤 방지
-    if (e.cancelable) e.preventDefault();
-  }
-
-  function endDrag() {
-    if (!isDragging) return;
-    isDragging = false;
-    
-    // 스타일 복구
-    dragBtn.style.transition = ''; 
-
-    // 전역 이벤트 리스너 제거
-    document.removeEventListener('mousemove', onDrag);
-    document.removeEventListener('touchmove', onDrag);
-    document.removeEventListener('mouseup', endDrag);
-    document.removeEventListener('touchend', endDrag);
-    
-    // 이동이 이루어졌다면 현재 위치를 로컬 스토리지에 기억
-    if (hasMoved) {
-      localStorage.setItem('arrow_sim_btn_left', dragBtn.style.left);
-      localStorage.setItem('arrow_sim_btn_top', dragBtn.style.top);
-    }
-  }
-
-  // 초기 실행: 위치 복원 및 이벤트 바인딩
-  loadButtonPosition();
-  
-  dragBtn.addEventListener('mousedown', startDrag);
-  dragBtn.addEventListener('touchstart', startDrag, { passive: true });
-
-  // 클릭 이벤트 처리 (드래그하지 않고 단순히 클릭만 했을 때 발사 기능 연동)
-  dragBtn.addEventListener('click', (e) => {
-    if (hasMoved) {
-      // 드래그 한 것이라면 클릭 동작(예: 발사)을 취소함
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    // 드래그 없이 클릭만 했다면 기존 시뮬레이터 발사 함수 실행
-    if (typeof fireArrow === 'function') {
-      fireArrow();
-    }
-  });
-});
-  // doDrag 함수 수정 (e.touches[0] 에러 예방 조건문 추가)
   function doDrag(e) {
     if (!isDragging) return;
-    const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : startX) : e.clientX;
-    const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : startY) : e.clientY;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const deltaX = clientX - startX;
     const deltaY = clientY - startY;
     if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
@@ -125,6 +141,7 @@
     let newLeft = initialLeft + deltaX;
     let newTop = initialTop + deltaY;
 
+    // 브라우저 뷰포트 전체 크기를 기준으로 가둠
     const maxLeft = window.innerWidth - dragBtn.offsetWidth;
     const maxTop = window.innerHeight - dragBtn.offsetHeight;
     newLeft = Math.max(0, Math.min(newLeft, maxLeft));
@@ -141,13 +158,16 @@
     if (!hasMoved) {
       if (typeof fireArrow === 'function') fireArrow();
     } else {
+      // 드래그 이동이 정상적으로 완료되면 로컬스토리지에 위치 좌표 저장
       localStorage.setItem('arrow_sim_btn_left', dragBtn.style.left);
       localStorage.setItem('arrow_sim_btn_top', dragBtn.style.top);
     }
   }
 
+  // 초기 실행 시 저장된 버튼 위치 불러오기
   loadButtonPosition();
 
+  // 이벤트 리스너 등록
   dragBtn.addEventListener('touchstart', startDrag, { passive: true });
   window.addEventListener('touchmove', doDrag, { passive: false });
   window.addEventListener('touchend', endDrag);
@@ -157,17 +177,18 @@
  
   const useLosCheck = document.getElementById('useLos');
   if (useLosCheck) {
+    // 로컬스토리지에서 기존 상태 복원
     const savedLos = localStorage.getItem('arrow_sim_useLos');
     useLosCheck.checked = (savedLos === 'true');
 
+    // 변경될 때마다 저장하고 화면 리드로우
     useLosCheck.addEventListener('change', () => {
       localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
       if (typeof drawScene === 'function') drawScene();
     });
   }  
   
-}); // 💡 닫는 괄호 위치 조정으로 DOMContentLoaded 스크립트 구문 오류 수정 완료
-
+});
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
   const introModal = document.getElementById('introModal');
@@ -176,14 +197,16 @@ function closeIntro() {
     introModal.style.visibility = 'hidden';
     setTimeout(() => {
       introModal.style.display = 'none';
-    }, 300);
+    }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
 }
 
 // =========================================================
-// 🎯 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템
+// 🎯 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템 (오류 수정 버전)
 // =========================================================
 let isTargetDragging = false;
+
+// 1. 캔버스 엘리먼트에 직접 이벤트 바인딩
 const simCanvasEl = document.getElementById('simCanvas');
 
 if (simCanvasEl) {
@@ -191,6 +214,7 @@ if (simCanvasEl) {
     simCanvasEl.addEventListener('touchstart', startTargetDrag, { passive: false });
 }
 
+// 2. 브라우저 창 전역에서 드래그 및 해제 추적
 window.addEventListener('mousemove', doTargetDrag);
 window.addEventListener('touchmove', doTargetDrag, { passive: false });
 window.addEventListener('mouseup', endTargetDrag);
@@ -198,7 +222,7 @@ window.addEventListener('touchend', endTargetDrag);
 
 function startTargetDrag(e) {
     if (typeof currentView !== 'undefined' && currentView !== 'target') return;
-    if (e.touches) e.preventDefault(); 
+    if (e.touches) e.preventDefault(); // 스크롤 바운스 방지
     
     isTargetDragging = true;
     updateTargetCoords(e);
@@ -218,53 +242,6 @@ function endTargetDrag(e) {
     }
 }
 
-// =========================================================
-// 💡 [추가 완료] 과녁 평면 캔버스 좌표 -> 시뮬레이터 수학 좌표 변환 및 UI 연동 로직
-// =========================================================
-function updateTargetCoords(e) {
-  if (!simCanvasEl) return;
-
-  // 1. 브라우저 화면 상의 캔버스 실제 사각형 위치 구하기
-  const rect = simCanvasEl.getBoundingClientRect();
-  
-  // 2. 이벤트 종류에 따른 정확한 클라이언트 좌표 추출
-  const clientX = e.touches ? (e.touches[0] ? e.touches[0].clientX : 0) : e.clientX;
-  const clientY = e.touches ? (e.touches[0] ? e.touches[0].clientY : 0) : e.clientY;
-
-  // 3. CSS 크기 대비 마우스의 내부 상대적 픽셀 위치 구하기 (0 ~ Canvas 크기)
-  const canvasX = (clientX - rect.left) * (simCanvasEl.width / rect.width);
-  const canvasY = (clientY - rect.top) * (simCanvasEl.height / rect.height);
-
-  // 💡 [수식 보정 핵심] 캔버스 중앙(과녁 중심)을 (0,0) 좌표계로 전환
-  // Canvas는 좌상단이 (0,0)이지만 과녁 시뮬레이터 수식은 정중앙이 중심입니다.
-  const centerX = simCanvasEl.width / 2;
-  const centerY = simCanvasEl.height / 2;
-
-  // 4. 과녁 반지름 스케일 비율 계산 (물리 모델 스케일 연동용 변수)
-  // 일반적으로 과녁 시뮬레이터는 반지름을 1~2m 내외로 잡으므로, 캔버스 크기 대비 스케일을 곱해줍니다.
-  const scale = (typeof TARGET_SCALE !== 'undefined') ? TARGET_SCALE : 0.005; 
-
-  // 5. 물리적 수평(Y)/수직(Z) 편차값 도출 
-  // Canvas Y축은 아래로 갈수록 커지므로 물리 좌표 Z(높이)는 반대로 빼주어야 정상 작동합니다.
-  const computedY = (canvasX - centerX) * scale;
-  const computedZ = (centerY - canvasY) * scale;
-
-  // 6. UI 입력창 데이터 갱신 및 로컬스토리지 저장
-  const elY = document.getElementById('losTargetY');
-  const elZ = document.getElementById('losTargetZ');
-
-  if (elY) {
-    elY.value = computedY.toFixed(3);
-    localStorage.setItem('arrow_sim_losTargetY', elY.value);
-  }
-  if (elZ) {
-    elZ.value = computedZ.toFixed(3);
-    localStorage.setItem('arrow_sim_losTargetZ', elZ.value);
-  }
-
-  // 7. 데이터가 바뀌었으므로 실시간으로 화면을 재점사
-  if (typeof drawScene === 'function') drawScene();
-}
 // 변수 충돌 없는 좌표 역산 처리 핵심 함수
 function updateTargetCoords(e) {
     const canvasEl = document.getElementById('simCanvas');
@@ -281,18 +258,23 @@ function updateTargetCoords(e) {
         clientY = e.clientY;
     }
     
+    // 1. [핵심 패치] ui.js 내부에서 직접 안전하게 Canvas 해상도 너비/높이 확보
     const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
     const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
     
+    // 2. 마우스 CSS 픽셀 위치 환산
     const canvasX = clientX - rect.left;
     const canvasY = clientY - rect.top;
     
+    // 3. physics.js 물리 레이아웃 비례 연산 동기화
     const tBottomY = currentDprHeight * 0.65;
     const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
     
+    // 4. 월드 공간 미터 수치 역산
     const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
     const calculatedY = (tBottomY - canvasY) / targetViewScale;
     
+    // 5. DOM 엘리먼트 값 주입 및 전파
     const losYEl = document.getElementById('losTargetY');
     const losZEl = document.getElementById('losTargetZ');
     const useLosEl = document.getElementById('useLos');
@@ -306,29 +288,33 @@ function updateTargetCoords(e) {
             localStorage.setItem('arrow_sim_useLos', 'true');
         }
         
+        // 브라우저에 값이 바뀌었음을 강제 전파하여 스토리지 저장 작동 유도
         const intTrigger = new Event('input', { bubbles: true });
         losYEl.dispatchEvent(intTrigger);
         losZEl.dispatchEvent(intTrigger);
 
+        // 실시간 강제 드로잉 호출
         if (typeof saveSettings === 'function') saveSettings();
         if (typeof drawScene === 'function') drawScene();
     }
 }
-
 // =========================================================================
-// 📱 [개선 완료] 설정 패널 하단 좌우 터치 슬라이드(스와이프) 제어 시스템 (간섭 차단 패치)
+// 📱 [신설] 설정 패널 하단 좌우 터치 슬라이드(스와이프) 전환 제어 시스템
 // =========================================================================
 window.addEventListener('DOMContentLoaded', () => {
   const panelContainer = document.getElementById('panel-container');
   if (!panelContainer) return;
 
+  // 슬라이드 작동을 위한 터치 좌표 기억 변수
   let touchStartX = 0;
   let touchStartY = 0;
   let touchEndX = 0;
   let touchEndY = 0;
 
+  // 순서대로 배치된 탭 리스트 정의
   const tabOrder = ['arrow', 'method', 'env', 'result'];
 
+  // 현재 활성화된 패널의 ID를 찾는 함수
   function getCurrentActiveTab() {
     for (let i = 0; i < tabOrder.length; i++) {
       const el = document.getElementById('panel-' + tabOrder[i]);
@@ -341,23 +327,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // 터치 시작 이벤트 탐지
   panelContainer.addEventListener('touchstart', (e) => {
-    // 💡 [UX 패치 1] 유저가 입력 필드(input, select, textarea)나 range 슬라이더를 만질 때는 스와이프를 무시합니다.
-    const targetTagName = e.target.tagName.toLowerCase();
-    const isRangeInput = e.target.type === 'range';
-    if (targetTagName === 'input' || targetTagName === 'select' || targetTagName === 'textarea' || isRangeInput) {
-      touchStartX = 0; // 좌표를 0으로 만들어 무효화
-      touchStartY = 0;
-      return;
-    }
-
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
   // 터치 종료 및 슬라이드 방향 계산 판정
   panelContainer.addEventListener('touchend', (e) => {
-    if (touchStartX === 0 && touchStartY === 0) return; // 무효화된 터치인 경우 즉시 종료
-
     touchEndX = e.changedTouches[0].clientX;
     touchEndY = e.changedTouches[0].clientY;
 
@@ -370,34 +345,16 @@ window.addEventListener('DOMContentLoaded', () => {
       let currentIndex = tabOrder.indexOf(currentTab);
 
       if (deltaX < 0) {
-        // ⬅️ 왼쪽으로 스와이프: 다음 탭으로 이동
+        // ⬅️ 왼쪽으로 슬라이드: 다음 탭으로 이동 (오른쪽 패널 불러오기)
         if (currentIndex < tabOrder.length - 1) {
           switchPanel(tabOrder[currentIndex + 1]);
-          triggerHapticFeedback(); // 💡 시각/인지 효과 지원
         }
       } else {
-        // ➡️ 오른쪽으로 스와이프: 이전 탭으로 이동
+        // ➡️ 오른쪽으로 슬라이드: 이전 탭으로 이동 (왼쪽 패널 불러오기)
         if (currentIndex > 0) {
           switchPanel(tabOrder[currentIndex - 1]);
-          triggerHapticFeedback(); // 💡 시각/인지 효과 지원
         }
       }
     }
-    
-    // 좌표 초기화
-    touchStartX = 0;
-    touchStartY = 0;
   }, { passive: true });
-
-  // 💡 [UX 패치 2] 탭이 바뀔 때 모바일 유저가 인지하기 쉽도록 스크롤을 상단으로 초기화하거나 가벼운 진동(지원 기기만)을 주는 헬퍼 함수
-  function triggerHapticFeedback() {
-    // 설정 패널 내부 스크롤이 내려가 있었다면 맨 위로 부드럽게 올려줌
-    panelContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // 모바일 하드웨어 진동 지원 시 미세한 햅틱 피드백 (10ms)
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
-  }
 });
-
