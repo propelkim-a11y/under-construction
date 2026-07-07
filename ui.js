@@ -272,7 +272,12 @@ function updateTargetCoords(e) {
     
     // 4. 월드 공간 미터 수치 역산
     const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
-    const calculatedY = (tBottomY - canvasY) / targetViewScale;
+/ 과녁 고도차(targetHeight) 값을 입력창에서 가져옵니다.
+    const targetHInput = parseFloat(document.getElementById('targetHeight').value);
+    const targetH = isNaN(targetHInput) ? 0 : targetHInput;
+
+// 과녁 기준 Y 높이에 과녁 고도차를 더해 실제 지면 기준 Y 좌표로 보정합니다.
+const calculatedY = ((tBottomY - canvasY) / targetViewScale) + targetH;
     
     // 5. DOM 엘리먼트 값 주입 및 전파
     const losYEl = document.getElementById('losTargetY');
