@@ -410,12 +410,7 @@ ctx.lineWidth = 1.5;
      const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
 
      const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
-     const tgtGeo = getDynamicTargetGeometry();
-     const targetH = tgtGeo.height;
-
-     const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
-// 지면 기준인 losY에서 과녁 고도차(targetH)를 빼서 과녁 바닥 기준으로 변환 후 드로잉
-     const losScreenY = tBottomY - ((losY - targetH) * targetViewScale); 
+     const losScreenY = tBottomY - (losY * targetViewScale);
 
      ctx.save();
      ctx.strokeStyle = '#ff9500'; // 주황색

@@ -243,82 +243,61 @@ function endTargetDrag(e) {
 }
 
 // 변수 충돌 없는 좌표 역산 처리 핵심 함수
-// 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템 (안전장치 강화 최종본)
-// 과녁도 표보기 조준점 실시간 터치/마우스 드래그 제어 시스템 (화면 멈춤 버그 완벽 해결 버전)
 function updateTargetCoords(e) {
-  const canvasEl = document.getElementById('simCanvas');
-  if (!canvasEl) return;
-  
-  const rect = canvasEl.getBoundingClientRect();
-  let clientX, clientY;
-  
-  // 모바일 터치 환경과 PC 마우스 환경의 좌표 수집 코드를 안전하게 단일화
-  if (e.touches && e.touches.length > 0) {
-    clientX = e.touches[0].clientX; // ◀ [핵심 패치] [0] 인덱스 누락으로 인한 멈춤 에러 수정
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
-  
-  // 1. Canvas 해상도 너비/높이 확보
-  const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
-  const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
-  
-  // 2. 마우스/터치 CSS 픽셀 위치 환산
-  const canvasX = clientX - rect.left;
-  const canvasY = clientY - rect.top;
-  
-  // 3. 물리 레이아웃 비례 연산 동기화
-  const tBottomY = currentDprHeight * 0.65;
-  const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
-  
-  // 4. 월드 공간 미터 수치 역산 및 철저한 에러(NaN) 방지
-  let calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
-  let calculatedY = (tBottomY - canvasY) / targetViewScale;
-  
-  // 숫자가 아니거나 무한대 값이 계산되면 안전하게 0으로 치환
-  if (isNaN(calculatedZ) || !isFinite(calculatedZ)) calculatedZ = 0;
-  if (isNaN(calculatedY) || !isFinite(calculatedY)) calculatedY = 0;
-  
-  // 과녁 고도차(targetHeight) 값 안전하게確保
-  const targetHeightEl = document.getElementById('targetHeight');
-  let targetH = 0;
-  if (targetHeightEl && targetHeightEl.value) {
-    targetH = parseFloat(targetHeightEl.value);
-    if (isNaN(targetH)) targetH = 0; // 글자나 빈칸 입력 시 뻗는 현상 방지
-  }
-  
-  // [정밀 보정] 과녁 기준 Y 높이에 고도차를 더해 최종 지면 기준 Y값 완성
-  const finalY = calculatedY + targetH;
-  
-  // 5. DOM 엘리먼트 값 주입 및 전파
-  const losYEl = document.getElementById('losTargetY');
-  const losZEl = document.getElementById('losTargetZ');
-  const useLosEl = document.getElementById('useLos');
-  
-  if (losYEl && losZEl) {
-    losYEl.value = finalY.toFixed(2);
-    losZEl.value = calculatedZ.toFixed(2);
+    const canvasEl = document.getElementById('simCanvas');
+    if (!canvasEl) return;
     
-    if (useLosEl && !useLosEl.checked) {
-      useLosEl.checked = true;
-      localStorage.setItem('arrow_sim_useLos', 'true');
+    const rect = canvasEl.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
     }
     
-    // 브라우저에 값이 바뀌었음을 알리는 이벤트를 발생시켜 스토리지 및 실시간 연동 강제 구동
-    const intTrigger = new Event('input', { bubbles: true });
-    losYEl.dispatchEvent(intTrigger);
-    losZEl.dispatchEvent(intTrigger);
+    // 1. [핵심 패치] ui.js 내부에서 직접 안전하게 Canvas 해상도 너비/높이 확보
+    const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
+    const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
     
-    // 실시간 드로잉 즉시 호출
-    if (typeof saveSettings === 'function') saveSettings();
-    if (typeof drawScene === 'function') drawScene();
-  }
+    // 2. 마우스 CSS 픽셀 위치 환산
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+    
+    // 3. physics.js 물리 레이아웃 비례 연산 동기화
+    const tBottomY = currentDprHeight * 0.65;
+    const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
+    
+    // 4. 월드 공간 미터 수치 역산
+    const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
+    const calculatedY = (tBottomY - canvasY) / targetViewScale;
+    
+    // 5. DOM 엘리먼트 값 주입 및 전파
+    const losYEl = document.getElementById('losTargetY');
+    const losZEl = document.getElementById('losTargetZ');
+    const useLosEl = document.getElementById('useLos');
+    
+    if (losYEl && losZEl) {
+        losYEl.value = calculatedY.toFixed(2);
+        losZEl.value = calculatedZ.toFixed(2);
+        
+        if (useLosEl && !useLosEl.checked) {
+            useLosEl.checked = true;
+            localStorage.setItem('arrow_sim_useLos', 'true');
+        }
+        
+        // 브라우저에 값이 바뀌었음을 강제 전파하여 스토리지 저장 작동 유도
+        const intTrigger = new Event('input', { bubbles: true });
+        losYEl.dispatchEvent(intTrigger);
+        losZEl.dispatchEvent(intTrigger);
+
+        // 실시간 강제 드로잉 호출
+        if (typeof saveSettings === 'function') saveSettings();
+        if (typeof drawScene === 'function') drawScene();
+    }
 }
-
-
-
 // =========================================================================
 // 📱 [신설] 설정 패널 하단 좌우 터치 슬라이드(스와이프) 전환 제어 시스템
 // =========================================================================
