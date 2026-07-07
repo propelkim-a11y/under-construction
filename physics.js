@@ -71,86 +71,41 @@ function getDynamicTargetGeometry() {
     return { baseX: targetBaseX, height: safeTargetH };
 }
 
-// =========================================================
-// [수정 완료] 화살 발시 기능 및 "슈우욱" 오디오 시스템 탑재
-// =========================================================
 function fireArrow() {
- if (isFlying) cancelAnimationFrame(animationFrameId);
- if (typeof saveSettings === 'function') saveSettings();
- 
- // --------------------------------------------------
- // 💨 [발시 효과음] 사대를 묵직하게 가르고 나가는 '슈우욱~~' 장음 필터
- // --------------------------------------------------
- try {
- const AudioContext = window.AudioContext || window.webkitAudioContext;
- if (AudioContext) {
- const audioCtx = new AudioContext();
- 
- // 1. 화이트 노이즈 버퍼 생성 (0.65초로 바람 소리 구현)
- const bufferSize = audioCtx.sampleRate * 0.65; 
- const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
- const data = buffer.getChannelData(0);
- for (let i = 0; i < bufferSize; i++) {
- data[i] = Math.random() * 2 - 1;
- }
- 
- const noiseSource = audioCtx.createBufferSource();
- noiseSource.buffer = buffer;
- 
- // 2. 대역통과 필터 세팅 (1600Hz -> 300Hz로 떨어지며 슈우욱 소리 연출)
- const filter = audioCtx.createBiquadFilter();
- filter.type = 'lowpass'; 
- filter.frequency.setValueAtTime(1600, audioCtx.currentTime);
- filter.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.6);
- filter.Q.setValueAtTime(6, audioCtx.currentTime);
+    if (isFlying) cancelAnimationFrame(animationFrameId);
+    if (typeof saveSettings === 'function') saveSettings();
 
- // 3. 볼륨 제어 (부드럽게 밀어주다가 스르륵 사라지는 잔향)
- const gainNode = audioCtx.createGain();
- gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
- gainNode.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.12);
- gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.65);
+    const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+    const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
+    const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
+    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
+    
+    const pitchRad = (angleDeg * Math.PI) / 180;
+    const yawRad = (yawDeg * Math.PI) / 180;
 
- // 노드 연결 및 재생
- noiseSource.connect(filter).connect(gainNode).connect(audioCtx.destination);
- noiseSource.start();
- noiseSource.stop(audioCtx.currentTime + 0.65);
- }
- } catch (e) {
- console.error("발시 효과음 재생 실패:", e);
- }
- // --------------------------------------------------
+    arrowState.x = 0; 
+    arrowState.y = launchH; 
+    arrowState.z = launchZ;
+    
+    arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
+    arrowState.vy = v0 * Math.sin(pitchRad);
+    arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
+    
+    arrowState.pitch = pitchRad; 
+    arrowState.yaw = yawRad;
 
- // [기존 물리 연산 및 초기화 로직 유지]
- const v0 = parseFloat(document.getElementById('velocity').value) || 50;
- const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
- const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
- const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
- const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
- 
- const pitchRad = (angleDeg * Math.PI) / 180;
- const yawRad = (yawDeg * Math.PI) / 180;
- arrowState.x = 0; 
- arrowState.y = launchH; 
- arrowState.z = launchZ;
- 
- arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
- arrowState.vy = v0 * Math.sin(pitchRad);
- arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
- 
- arrowState.pitch = pitchRad; 
- arrowState.yaw = yawRad;
- flightMetrics = { maxDistance: 0, maxHeight: launchH, sideDeviation: 0, flightTime: 0, impactVelocity: v0, impactEnergy: 0 };
- targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
- hasReachedTargetX = false;
- hasReachedTargetY = false;
- hasIntersectedTargetPlane = false;
- 
- updateResultUI();
- trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
- isFlying = true;
- animate();
+    flightMetrics = { maxDistance: 0, maxHeight: launchH, sideDeviation: 0, flightTime: 0, impactVelocity: v0, impactEnergy: 0 };
+    targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
+    hasReachedTargetX = false;
+    hasReachedTargetY = false;
+    hasIntersectedTargetPlane = false;
+    
+    updateResultUI();
+    trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
+    isFlying = true;
+    animate();
 }
-
 
 function animate() {
     if (!isFlying) return;
@@ -434,92 +389,17 @@ ctx.lineWidth = 1.5;
       const markerX = (dprWidth / 2) + (targetHitMetrics.localZ * targetViewScale);
       const markerY = tBottomY - (localYFromBottom * targetViewScale);
 
-        if (targetHitMetrics.isHit) {
- // ==================================================
- // 🔊 [관중 효과음] 별도 사운드 파일 없이 청아한 '띵~' 소리 실시간 생성
- // ==================================================
- try {
- const AudioContext = window.AudioContext || window.webkitAudioContext;
- if (AudioContext) {
- const audioCtx = new AudioContext();
- 
- // 1. 메인 주파수 (맑은 타격음: 피치 고음)
- const osc = audioCtx.createOscillator();
- const gainNode = audioCtx.createGain();
- osc.type = 'sine';
- osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 음정
- 
- // 2. 부조화 배음 (나무/금속 과녁 특유의 '팅~' 하는 타격감 유도)
- const osc2 = audioCtx.createOscillator();
- const gainNode2 = audioCtx.createGain();
- osc2.type = 'triangle';
- osc2.frequency.setValueAtTime(1220, audioCtx.currentTime);
-
- // 볼륨 감쇄 제어 (부드럽게 사라지도록 설정)
- gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
- gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
- 
- gainNode2.gain.setValueAtTime(0.04, audioCtx.currentTime);
- gainNode2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-
- // 오디오 노드 그래프 연결 및 재생 시작
- osc.connect(gainNode).connect(audioCtx.destination);
- osc2.connect(gainNode2).connect(audioCtx.destination);
- 
- osc.start();
- osc2.start();
- 
- // 지정된 시간에 정확히 정지 및 메모리 해제
- osc.stop(audioCtx.currentTime + 0.35);
- osc2.stop(audioCtx.currentTime + 0.12);
- }
- } catch (e) {
- console.error("관중 효과음 재생 실패:", e);
- }
- // ==================================================
-
- ctx.fillStyle = '#34c759'; ctx.strokeStyle = 'rgba(52, 199, 89, 0.4)'; ctx.lineWidth = 8;
- ctx.beginPath(); ctx.arc(markerX, markerY, 6, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
- ctx.fillStyle = '#34c759'; ctx.font = 'bold 13px -apple-system'; ctx.textAlign = 'center'; 
- ctx.fillText(" 관중 (HIT!)", dprWidth / 2, tTopY - 14); 🎯
- } else {
- // ==================================================
- // 💨 [불중 효과음] 화살이 바람을 가르며 비껴가는 '휙~' 소리 (오타 수정 완료)
- // ==================================================
- try {
- const AudioContext = window.AudioContext || window.webkitAudioContext;
- if (AudioContext) {
- const audioCtx = new AudioContext(); // <- 이 부분의 오타를 안전하게 고쳤습니다.
- const osc = audioCtx.createOscillator();
- const gainNode = audioCtx.createGain();
- 
- osc.type = 'sine';
- 
- // 주파수를 고음(1200Hz)에서 저음(300Hz)으로 빠르게 떨어뜨려 비껴가는 도플러 효과 재현
- osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
- osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.3);
- 
- // 볼륨이 서서히 커졌다가 바람 소리처럼 부드럽게 사라지도록 설정
- gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
- gainNode.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05); 
- gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35); 
- 
- // 노드 연결 및 재생
- osc.connect(gainNode).connect(audioCtx.destination);
- osc.start();
- osc.stop(audioCtx.currentTime + 0.35);
- }
- } catch (e) {
- console.error("불중 효과음 재생 실패:", e);
- }
- // ==================================================
-
- ctx.fillStyle = '#ff3b30'; ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)'; ctx.lineWidth = 6;
- ctx.beginPath(); ctx.arc(markerX, markerY, 5, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
- ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 12px -apple-system'; ctx.textAlign = 'center'; 
- ctx.fillText(` 불중 (오차: 좌우 ${targetHitMetrics.localZ.toFixed(2)}m, 바닥높이 ❌ ${localYFromBottom.toFixed(2)}m)`, dprWidth / 2, tTopY - 14);
- }
-
+      if (targetHitMetrics.isHit) {
+        ctx.fillStyle = '#34c759'; ctx.strokeStyle = 'rgba(52, 199, 89, 0.4)'; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.arc(markerX, markerY, 6, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+        ctx.fillStyle = '#34c759'; ctx.font = 'bold 13px -apple-system'; ctx.textAlign = 'center'; 
+        ctx.fillText("🎯 관중 (HIT!)", dprWidth / 2, tTopY - 14);
+      } else {
+        ctx.fillStyle = '#ff3b30'; ctx.strokeStyle = 'rgba(255, 59, 48, 0.3)'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(markerX, markerY, 5, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
+        ctx.fillStyle = '#ff3b30'; ctx.font = 'bold 12px -apple-system'; ctx.textAlign = 'center'; 
+        ctx.fillText(`❌ 불중 (오차: 좌우 ${targetHitMetrics.localZ.toFixed(2)}m, 바닥높이 ${localYFromBottom.toFixed(2)}m)`, dprWidth / 2, tTopY - 14);
+      }
     }
  // ==========================================
  // 🎯 [여기에 코드가 추가되었습니다] 표보기 조준 원 그리기
