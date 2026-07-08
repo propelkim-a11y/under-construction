@@ -366,11 +366,24 @@ ctx.lineWidth = 1.5;
     const w = rightX - leftX; 
     const h = bottomY - topY;
 
+       // [1단계-보완] 내부 요소 세로 압축 비율 연동 처리
     ctx.fillStyle = '#ffffff'; ctx.fillRect(leftX, topY, w, h);
     ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 1.5; ctx.strokeRect(leftX, topY, w, h);
     ctx.fillStyle = '#1d1d1f'; ctx.fillRect(leftX + w * 0.1, topY + h * 0.08, w * 0.8, h * 0.15);
     ctx.fillRect(leftX + w * 0.1, topY + h * 0.3, w * 0.8, h * 0.62);
-    ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.arc(leftX + w * 0.5, (topY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, 0, Math.PI * 2); ctx.fill();
+      
+      // 빨간 원을 타원(ellipse) 구조로 변경하여 세로 압축률 반영
+    ctx.fillStyle = '#ff3b30'; 
+    ctx.beginPath(); 
+    ctx.ellipse(
+      leftX + w * 0.5, 
+      (topY + h * 0.3) + (h * 0.62) * 0.5, 
+      w * 0.23, 
+      h * 0.23 * (dynamicTgtProjH / TGT_PROJ_H), 
+      0, 0, Math.PI * 2
+    ); 
+    ctx.fill();
+
 
   } else if (currentView === 'top') {
     const projTopX = targetBaseX + TGT_H * Math.sin(TGT_TILT); 
