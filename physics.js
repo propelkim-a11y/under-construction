@@ -232,6 +232,17 @@ const losPitchRad = Math.atan2(safeTargetH - launchH, hDist);
 const dynamicTgtProjH = TGT_H * Math.cos(losPitchRad + TGT_TILT);
 const finalProjH = isNaN(dynamicTgtProjH) ? TGT_PROJ_H : Math.min(TGT_H, dynamicTgtProjH);
 window.currentDynamicTgtProjH = finalProjH;
+
+// 🌐 [2단계 신규 추가] 사수 좌우 위치에 따른 동적 가로 너비 연산
+const launchZ = parseFloat(document.getElementById('launchZ').value) || 0;
+// 사수의 좌우 시선 편각(라디안) 구하기 (과녁의 기준 전방 거리 targetBaseX 대비 좌우 치우침)
+const losYawRad = Math.atan2(launchZ, targetBaseX);
+// 좌우로 치우칠수록 cos 값이 작아져 가로가 홀쭉해지는 압축 수식
+const dynamicTgtProjW = TGT_W * Math.cos(losYawRad);
+// 에러 방지 안전장치 및 ui.js 공유용 글로벌 세팅
+const finalProjW = isNaN(dynamicTgtProjW) ? TGT_W : Math.min(TGT_W, dynamicTgtProjW);
+window.currentDynamicTgtProjW = finalProjW;
+
     
 function toScreen(pX, pY, pZ) {
   if (currentView === 'side') {
@@ -391,8 +402,8 @@ ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 1.5; ctx.stroke();
 
   } else if (currentView === 'target') {
-    const tLeftX = (dprWidth / 2) - (TGT_W / 2 * targetViewScale); 
-    const tRightX = (dprWidth / 2) + (TGT_W / 2 * targetViewScale);
+    const tLeftX = (dprWidth / 2) - (finalProjW / 2 * targetViewScale);  
+    const tRightX = (dprWidth / 2) + (finalProjW / 2 * targetViewScale);
     const tBottomY = dprHeight * 0.75; 
     const tTopY = tBottomY - (dynamicTgtProjH * targetViewScale); // 🔥 동적 높이 변수로 교체 
     const w = tRightX - tLeftX; 
