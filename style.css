@@ -1,203 +1,208 @@
-* { 
-    box-sizing: border-box; 
-    margin: 0; 
-    padding: 0; 
-} 
-
-body { 
-    font-family: -apple-system, sans-serif; 
-    background: #f5f5f7; 
-    color: #1d1d1f; 
-    height: 100vh; 
-    overflow: hidden; 
-    display: flex; 
-    flex-direction: column; 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-.main-screen { 
-    height: 60vh; 
-    display: flex; 
-    flex-direction: column; 
-    padding: 12px 16px 4px 16px; 
-    box-sizing: border-box; 
-    min-height: 0; 
+body {
+    font-family: -apple-system, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-h1 { 
-    font-size: 20px; 
-    font-weight: 700; 
-    margin-bottom: 8px; 
-    text-align: center; 
+/* 상단 메인 화면 (60%) */
+.main-screen {
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px 4px 16px;
+    box-sizing: border-box;
+    min-height: 0;
+    position: relative;
+    z-index: 10; /* 하단 패널이 침범하지 못하도록 위로 올림 */
 }
 
-.segmented-control { 
-    display: flex; 
-    background: #e3e3e6; 
-    padding: 3px; 
-    border-radius: 9px; 
-    margin-bottom: 8px; 
-    align-self: center; 
-    width: fit-content; 
+h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-align: center;
 }
 
-.segment-btn { 
-    border: none; 
-    background: none; 
-    padding: 4px 16px; 
-    font-size: 12px; 
-    font-weight: 500; 
-    color: #515154; 
-    border-radius: 7px; 
-    cursor: pointer; 
+.segmented-control {
+    display: flex;
+    background: #e3e3e6;
+    padding: 3px;
+    border-radius: 9px;
+    margin-bottom: 8px;
+    align-self: center;
+    width: fit-content;
 }
 
-.segment-btn.active { 
-    background: #ffffff; 
-    color: #1d1d1f; 
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.1); 
-    font-weight: 600; 
+.segment-btn {
+    border: none;
+    background: none;
+    padding: 4px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #515154;
+    border-radius: 7px;
+    cursor: pointer;
 }
 
-.sim-container { 
-    flex: 1; 
-    min-height: 0; 
-    background: #ffffff; 
-    border-radius: 16px; 
-    box-shadow: 0 2px 12px rgba(0,0,0,0.03); 
-    border: 1px solid rgba(0,0,0,0.04); 
-    overflow: hidden; 
-    position: relative; 
+.segment-btn.active {
+    background: #ffffff;
+    color: #1d1d1f;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    font-weight: 600;
 }
 
-canvas { 
-    width: 100%; 
-    height: 100%; 
-    display: block; 
+.sim-container {
+    flex: 1;
+    min-height: 0;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.04);
+    overflow: hidden;
+    position: relative;
+    touch-action: pan-y; /* 상하 스크롤은 허용하되 좌우 스와이프 터치 분리 */
 }
 
-.fire-btn { 
-    position: fixed; 
-    top: 20vh; 
-    right: 24px; 
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.fire-btn {
+    position: fixed;
+    top: 20vh;
+    right: 24px;
     width: 60px;
     height: 60px;
-    background: #0071e3; 
-    color: #fff; 
-    font-size: 14px; 
-    font-weight: 600; 
-    border: none; 
-    border-radius: 50%; 
-    cursor: move; 
-    box-shadow: 0 4px 16px rgba(0,113,227,0.45); 
+    background: #0071e3;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 50%;
+    cursor: move;
+    box-shadow: 0 4px 16px rgba(0,113,227,0.45);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 99999; 
+    z-index: 99999;
     user-select: none;
-    touch-action: none; 
+    touch-action: none;
 }
 
 .fire-btn:active {
     background: #005bb5;
 }
 
-/* 설정판 배경을 지형과 분리하여 깔끔하게 배경 처리 */
-#panel-container { 
-    height: calc(40vh - 86px); /* 저작권 바 영역 마진 확보 */
-    background: #f5f5f7; 
-    padding: 10px 16px; 
-    overflow: hidden;          /* ⚠️ 아주 중요: 내부 요소가 세로로 깨지거나 가로로 튀어나오는 것 방지 */ 
-    /* 💡 여기서부터 부드러운 스와이프를 위해 새로 추가되는 필수 속성입니다 */
-    display: flex;             /* 내부 카드 패널들을 가로로 나란히 정렬 */
-    width: 400%;               /* 총 4개의 탭이므로 화면 너비의 4배 크기로 설정 */
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); /* 부드럽고 탄성 있는 움직임 효과 */
-    will-change: transform;    /* 모바일 브라우저에서 화면을 끊김 없이 부드럽게 렌더링하도록 최적화 */
+/* 💡 대수술: 하단 설정 슬라이더 마스크 역할을 할 컨테이너 생성 */
+.panel-mask {
+    height: calc(40vh - 86px);
+    overflow: hidden; /* 가로로 튀어나오는 카드들을 깔끔하게 숨겨줌 */
+    background: #f5f5f7;
+    position: relative;
+    z-index: 5;
 }
 
-/* 2. 개별 카드 패널(화살설정, 사법설정 등)이 화면 하나를 가득 채우도록 만듭니다 */
+/* 💡 실시간으로 움직일 기차 역할의 바구니 */
+#panel-container {
+    display: flex;       /* 카드들을 가로로 나란히 정렬 */
+    width: 400%;         /* 4개의 탭이므로 화면 너비의 4배 */
+    height: 100%;
+    margin: 0;
+    padding: 10px 0;     /* 좌우 패딩은 개별 카드에게 위임 */
+    will-change: transform;
+    transform: translateX(0px);
+}
+
+/* 💡 화면 하나를 가득 채울 개별 카드 칸 */
 .fixed-panel {
-    /* 기존의 display: none; 처리는 제거합니다. (이제 숨기지 않고 옆으로 밀어둘 것입니다) */
-    display: block !important; 
-    width: 25%;                /* 전체 400% 중 정확히 4분의 1(화면 너비의 100%)씩 차지 */
-    flex-shrink: 0;            /* 가로 공간이 부족해도 카드가 찌그러지지 않도록 보호 */
+    display: block !important; /* js display 제어 간섭 차단 */
+    width: 25%;                /* 전체 400% 중 정확히 4분의 1 (화면 1배 크기) */
+    flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;          /* 카드 내부 내용이 길면 세로 스크롤 가능 */
+    padding: 0 16px;           /* 화면 양옆 여백 */
 }
 
-.fixed-panel {
-    display: block !important; /* 무조건 보이도록 설정 (이제 자바스크립트가 밀어서 숨깁니다) */
-    width: 25%;                /* 전체 너비(400%)의 4분의 1 = 화면 딱 1배 너비 */
-    flex-shrink: 0;            /* 카드가 좌우로 찌그러지지 않도록 고정 */
-}
-
-/* 💡 [신설] 설정을 감싸는 세련된 라운드 카드 상자 디자인 */
 .panel-card {
     background: #ffffff;
     border-radius: 14px;
     padding: 14px 16px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.03);
 }
 
-.panel-title { 
-    font-size: 14px; 
-    font-weight: 700; 
-    margin-bottom: 12px; 
-    color: #1d1d1f; 
+.panel-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-weight: 700;
+    color: #1d1d1f;
 }
 
-.form-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px 12px; 
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
 }
 
-.form-group { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    background: #f5f5f7; 
-    padding: 8px 12px; 
-    border-radius: 8px; 
-    height: 38px; 
+.form-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f5f5f7;
+    padding: 8px 12px;
+    border-radius: 8px;
+    height: 38px;
 }
 
-.form-group label { 
-    font-size: 12px; 
-    color: #515154; 
-    font-weight: 600; 
+.form-group label {
+    font-size: 12px;
+    color: #515154;
+    font-weight: 600;
 }
 
-.input-wrapper { 
-    display: flex; 
-    align-items: center; 
+.input-wrapper {
+    display: flex;
+    align-items: center;
 }
 
-.input-wrapper input { 
-    width: 60px; 
-    border: none; 
-    background: transparent; 
-    text-align: right; 
-    font-size: 13px; 
-    font-weight: 600; 
-    outline: none; 
-    color: #1d1d1f; 
+.input-wrapper input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    color: #1d1d1f;
 }
 
-.input-wrapper .unit { 
-    font-size: 11px; 
-    color: #86868b; 
-    margin-left: 4px; 
-    width: 32px; 
-    text-align: left; 
+.input-wrapper .unit {
+    font-size: 11px;
+    color: #86868b;
+    margin-left: 4px;
+    width: 32px;
+    text-align: left;
 }
 
-.result-value { 
-    font-size: 13px; 
-    font-weight: 700; 
-    color: #0071e3; 
-    text-align: right; 
+.result-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0071e3;
+    text-align: right;
 }
 
-/* 💡 [신설] 설정판 밖, 맨 아래 탭바 바로 위에 부동으로 안착하는 저작권 레이아웃 스타일 */
 #app-copyright {
     height: 26px;
     background: #ffffff;
@@ -205,102 +210,98 @@ canvas {
     font-size: 10px;
     color: #86868b;
     line-height: 26px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0,0,0,0.05);
     letter-spacing: -0.2px;
     user-select: none;
 }
 
-.tab-bar { 
-    height: 60px; 
-    background: rgba(255,255,255,0.92); 
-    border-top: 0.5px solid rgba(0,0,0,0.1); 
-    display: flex; 
-    justify-content: space-around; 
-    align-items: center; 
+.tab-bar {
+    height: 60px;
+    background: rgba(255,255,255,0.92);
+    border-top: 0.5px solid rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
 }
 
-.tab-item { 
-    background: none; 
-    border: none; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 2px; 
-    color: #86868b; 
-    cursor: pointer; 
-    font-size: 10px; 
-    font-weight: 600; 
-    width: 25%; 
-    height: 100%; 
-    justify-content: center; 
+.tab-item {
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: #86868b;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    width: 25%;
+    height: 100%;
+    justify-content: center;
 }
 
-.tab-item.active { 
-    color: #0071e3; 
-    background: rgba(0,113,227,0.04); 
+.tab-item.active {
+    color: #0071e3;
+    background: rgba(0,113,227,0.04);
 }
 
-.tab-icon { 
-    font-size: 18px; 
+.tab-icon {
+    font-size: 18px;
 }
-/* 인트로 모달 전체 배경 */
+
 .intro-modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(5px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999; /* 최상단 배치 */
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    z-index: 999999;
 }
 
-/* 인트로 카드 상자 */
 .intro-content {
-  background-color: #ffffff;
-  border-radius: 20px;
-  width: 85%;
-  max-width: 450px;
-  padding: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  text-align: center;
-  animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    background-color: #ffffff;
+    border-radius: 20px;
+    width: 85%;
+    max-width: 450px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+    animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .intro-header .intro-logo { font-size: 40px; display: block; margin-bottom: 8px; }
 .intro-header h2 { font-size: 20px; color: #1d1d1f; margin: 0 0 16px 0; font-weight: 600; }
 
-/* 공지사항 본문 영역 */
 .intro-body {
-  text-align: left;
-  background-color: #f5f5f7;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+    text-align: left;
+    background-color: #f5f5f7;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 .intro-body h3 { font-size: 14px; margin: 0 0 10px 0; color: #ff3b30; }
 .intro-body ul { margin: 0; padding-left: 20px; font-size: 13px; color: #515154; line-height: 1.6; }
 .intro-body li { margin-bottom: 8px; }
 
-/* 시작하기 버튼 */
 .intro-close-btn {
-  width: 100%;
-  background-color: #0071e3;
-  color: white;
-  border: none;
-  padding: 14px;
-  font-size: 15px;
-  font-weight: 600;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    width: 100%;
+    background-color: #0071e3;
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 .intro-close-btn:active { background-color: #005bb5; }
 
-/* 나타날 때 팝업 애니메이션 */
 @keyframes modalScaleUp {
-  from { transform: scale(0.9) translateY(10px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
+    from { transform: scale(0.9) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
 }
