@@ -76,33 +76,69 @@ body, html {
 }
 
 /* 중앙 로고 - 애니메이션 및 네온 제거 */
-.intro-center-logo {
-    position: relative;
-    width: 140px;
-    height: 140px;
+/* 중앙 공지사항 보드 컨테이너 */
+.intro-notice-board {
+    width: 90%;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: left; /* 담백한 리스트 정렬을 위해 좌측 정렬 */
+}
+
+/* 공지사항 헤더 타이틀 */
+.notice-board-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: -0.2px;
+    margin-bottom: 14px;
+    padding-left: 4px;
+    border-left: 2px solid rgba(255, 255, 255, 0.4); /* 미니멀한 포인트 바 */
+}
+
+/* 공지사항 아이템 리스트 */
+.notice-board-body {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    gap: 12px;
 }
-.logo-neon-ring {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.1); /* 아주 가늘고 은은한 화이트 테두리 */
-    animation: none !important; /* 회전 애니메이션 완전 소거 */
-    box-shadow: none !important;
+
+.notice-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04); /* 은은한 구분선 */
 }
-.logo-core {
-    font-size: 18px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: 1px;
-    text-shadow: none !important; /* 글자 발광 효과 제거 */
-    width: 100%;
-    text-align: center;
-    animation: none !important;
+
+.notice-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none; /* 마지막 아이템은 구분선 제거 */
 }
+
+/* 공지사항 태그 (업데이트, 안내 등) */
+.notice-tag {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* 공지사항 본문 텍스트 */
+.notice-text {
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.45);
+    line-height: 1.4;
+    word-break: keep-all;
+}
+
+
 
 /* 하단 버튼 및 안내 문구 */
 .intro-footer-action {
