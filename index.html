@@ -34,7 +34,7 @@
     <div class="intro-body">
       <h3>📢 시스템 공지사항</h3>
       <ul>
-        <li><strong>기능 추가:</strong> 과녁높이 차이 0m에서 표보기를 추가했습니다. 높이차이에 따라 추가 예정입니다. </li>
+        <li><strong>기능 추가:</strong> 과녁도에서 표보기를 추가했습니다. </li>
         <li><strong>사용 안내:</strong> 바람, 과녁 고도차, 사수의 위치를 변경하며 정밀한 조준점 변화를 테스트해 보세요.</li>
         <li>본 프로그램은 국궁 표준 제원을 바탕으로 제작된 시뮬레이터입니다.</li>
       </ul>
@@ -49,17 +49,12 @@
 <div class="main-screen">
     <h1>Arrow Trajectory</h1>
     
-<div class="segmented-control">
-    <!-- 정면을 누르면 'arrow' 패널로 슬라이딩 -->
-    <button class="segment-btn active" onclick="changeView('front', this); switchPanel('arrow')">정면</button>
-    <!-- 측면을 누르면 'method' 패널로 슬라이딩 -->
-    <button class="segment-btn" onclick="changeView('side', this); switchPanel('method')">측면</button>
-    <!-- 평면을 누르면 'env' 패널로 슬라이딩 -->
-    <button class="segment-btn" onclick="changeView('top', this); switchPanel('env')">평면</button>
-    <!-- 과녁을 누르면 'result' 패널로 슬라이딩 -->
-    <button class="segment-btn" onclick="changeView('target', this); switchPanel('result')">과녁</button>
-</div>
-
+    <div class="segmented-control">
+        <button class="segment-btn" onclick="changeView('front', this)">정면</button>
+        <button class="segment-btn active" onclick="changeView('side', this)">측면</button>
+        <button class="segment-btn" onclick="changeView('top', this)">평면</button>
+        <button class="segment-btn" onclick="changeView('target', this)">과녁</button>
+    </div>
     
     <div class="sim-container">
         <canvas id="simCanvas"></canvas>
@@ -69,9 +64,9 @@
 
 <!-- 하단 40% 영역: 라운드 카드형 설정 및 결과 패널 컨테이너 -->
 <div id="panel-container">
-  <div class="panel-slider">
+  
     <!-- [탭 1] 화살 설정 -->
-    <div class="fixed-panel" id="panel-arrow">
+    <div class="fixed-panel active" id="panel-arrow">
         <div class="panel-card">
             <div class="panel-title">화살 설정</div>
             <div class="form-grid">
@@ -191,8 +186,7 @@
                 <div class="form-group"><label>충돌 에너지</label><div class="result-value" id="resImpactEnergy">0.00 J</div></div>
             </div>
         </div>
-    </div>
- </div>
+    </div>  
 </div>
 
 <!-- 💡 [위치 이동] 설정 패널 밖으로 완전히 탈출시켜 맨 아래 고정된 저작권 표시 영역 -->

@@ -102,33 +102,21 @@ canvas {
 }
 
 /* 설정판 배경을 지형과 분리하여 깔끔하게 배경 처리 */
-/* 1. 부모 상자: 가로로 튀어나가는 패널들을 화면에서 숨겨줍니다 */
-#panel-container {
-  height: calc(40vh - 86px); 
-  background: #f5f5f7; 
-  padding: 10px 16px; 
-  overflow: hidden; /* ★ 중요: 기존 auto에서 hidden으로 변경 */
-  position: relative;
+#panel-container { 
+    height: calc(40vh - 86px); /* 저작권 바 영역 마진 확보 */
+    background: #f5f5f7; 
+    padding: 10px 16px; 
+    overflow-y: auto; 
 }
 
-/* 2. 슬라이더 레일: 4개의 패널을 가로로 나란히 정렬하고 애니메이션 효과를 줍니다 */
-.panel-slider {
-  display: flex;       
-  width: 400%;         
-  height: 100%;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
+.fixed-panel { 
+    display: none; 
+    height: 100%; 
 }
 
-/* 3. 개별 패널: 각각 화면 너비만큼 가득 차게 만듭니다 */
-.fixed-panel {
-  display: block !important; /* ★ 중요: 기존 display: none을 무시하고 항상 켜둡니다 */
-  width: 25%;               
-  height: 100%;
-  box-sizing: border-box;
-  padding: 0 4px;           
-  overflow-y: auto;         
+.fixed-panel.active { 
+    display: block; 
 }
-
 
 /* 💡 [신설] 설정을 감싸는 세련된 라운드 카드 상자 디자인 */
 .panel-card {
@@ -305,28 +293,4 @@ canvas {
 @keyframes modalScaleUp {
   from { transform: scale(0.9) translateY(10px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-/* 웹페이지 전체 창이 가로로 늘어나거나 스크롤바가 생기는 것을 완벽히 차단합니다 */
-html, body {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  margin: 0;
-  padding: 0;
-}
-
-/* 시뮬레이션 그림이 있는 상단 스크린 영역을 화면 너비에 딱 맞게 고정합니다 */
-.main-screen {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* 캔버스 상자도 밖으로 튀어나가지 않게 제자리에 고정합니다 */
-.sim-container {
-  width: 100% !important;
-  max-width: 100% !important;
-  position: relative !important;
-  overflow: hidden !important;
 }
