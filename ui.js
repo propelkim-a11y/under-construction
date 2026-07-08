@@ -6,25 +6,35 @@ const INPUT_IDS = [
 ];
 
 function saveSettings() {
-  INPUT_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) localStorage.setItem('arrow_sim_' + id, el.value);
-  });
+  try {
+    INPUT_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) localStorage.setItem('arrow_sim_' + id, el.value);
+    });
     const useLosEl = document.getElementById('useLos');
     if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
+  } catch (e) {
+    // 시크릿 모드 등 localStorage 제한 환경에서 에러가 나도 무시하고 넘어감
+    console.warn("localStorage 저장 실패 (시크릿 모드 환경):", e);
+  }
 }
 
 function loadSettings() {
-  INPUT_IDS.forEach(id => {
-    const savedValue = localStorage.getItem('arrow_sim_' + id);
-    const el = document.getElementById(id);
-    if (el && savedValue !== null) {
-      el.value = savedValue;
-    }
-  });
+  try {
+    INPUT_IDS.forEach(id => {
+      const savedValue = localStorage.getItem('arrow_sim_' + id);
+      const el = document.getElementById(id);
+      if (el && savedValue !== null) {
+        el.value = savedValue;
+      }
+    });
     const useLosEl = document.getElementById('useLos');
     const savedLos = localStorage.getItem('arrow_sim_useLos');
-    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
+    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true'); 
+  } catch (e) {
+    // 에러가 나도 자바스크립트가 멈추지 않고 하단 탭바를 정상 렌더링하도록 예외 처리
+    console.warn("localStorage 로드 실패 (시크릿 모드 환경):", e);
+  }
 }
 
 function switchPanel(type) {
