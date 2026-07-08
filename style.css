@@ -22,29 +22,30 @@ body, html {
 }
 /* 2. 각 화면 간의 레이아웃 상호 간섭 원천 차단 */
 .app-scene {
- position: absolute;
- top: 0;
- left: 0;
- width: 100%;
- height: 100%;
- overflow: hidden;
- display: none !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: none; /* !important를 제거하여 active 클래스가 정상 작동하도록 수정 */
 }
 .app-scene.active {
- display: block !important;
+    display: block !important;
 }
 
-/* 3. 프리미엄 인트로 화면 전용 아키텍처 디자인 명세 (Minimal Dark Edition) */
+/* 3. 프리미엄 인트로 화면 전용 아키텍처 디자인 명세 */
 #scene-intro {
     z-index: 9999 !important;
-    background: #0A0A0C; /* 매트한 무광 블랙 단색으로 무게감 부여 */
-    display: none !important;
+    background: #0A0A0C; /* 담백한 무광 블랙 단색 배경 */
+    display: none; /* !important 제거 */
 }
 #scene-intro.active {
-    display: flex !important;
+    display: flex !important; /* 활성화 시 flex 레이아웃 정상 가동 */
     justify-content: center;
     align-items: center;
 }
+
 .intro-glass-panel {
     width: 100%;
     height: 100%;
