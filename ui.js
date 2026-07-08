@@ -28,20 +28,26 @@ function loadSettings() {
 }
 
 function switchPanel(type) {
-  saveSettings();
-  const panels = ['arrow', 'method', 'env', 'result'];
-  panels.forEach(p => {
-    const el = document.getElementById('panel-' + p);
-    if (el) el.classList.remove('active');
-  });
-
-  const targetPanel = document.getElementById('panel-' + type);
-  if (targetPanel) {
-    targetPanel.classList.add('active');
+  saveSettings(); // [원래 코드 유지] 변경사항 저장
+  
+  // 1. 패널들의 가로 배치 순서 정의
+  const typeOrder = ['arrow', 'method', 'env', 'result'];
+  const activeIndex = typeOrder.indexOf(type); // 몇 번째 패널인지 숫자로 환산 (0, 1, 2, 3)
+  
+  if (activeIndex !== -1) {
+    // 2. CSS에서 만든 가로 슬라이더 레일 상자 찾기
+    const slider = document.querySelector('.panel-slider');
+    if (slider) {
+      // 3. 인덱스에 따라 왼쪽으로 -25%씩 이동 (스르륵 움직이는 핵심 코드)
+      const movePercent = activeIndex * -25;
+      slider.style.transform = `translateX(${movePercent}%)`;
+    }
   }
-  updateTabActiveStyle(type);
-  if (typeof drawScene === 'function') drawScene();
+
+  updateTabActiveStyle(type); // [원래 코드 유지] 하단 탭 버튼 불빛 변경
+  if (typeof drawScene === 'function') drawScene(); // [원래 코드 유지] 화면 다시 그리기
 }
+
 
 function updateTabActiveStyle(type) {
   const tabItems = document.querySelectorAll('.tab-bar .tab-item');
