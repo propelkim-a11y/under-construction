@@ -107,11 +107,19 @@ canvas {
     background: #f5f5f7; 
     padding: 10px 16px; 
     overflow-y: auto; 
+    /* 💡 여기서부터 부드러운 스와이프를 위해 새로 추가되는 필수 속성입니다 */
+    display: flex;             /* 내부 카드 패널들을 가로로 나란히 정렬 */
+    width: 400%;               /* 총 4개의 탭이므로 화면 너비의 4배 크기로 설정 */
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); /* 부드럽고 탄성 있는 움직임 효과 */
+    will-change: transform;    /* 모바일 브라우저에서 화면을 끊김 없이 부드럽게 렌더링하도록 최적화 */
 }
 
-.fixed-panel { 
-    display: none; 
-    height: 100%; 
+/* 2. 개별 카드 패널(화살설정, 사법설정 등)이 화면 하나를 가득 채우도록 만듭니다 */
+.fixed-panel {
+    /* 기존의 display: none; 처리는 제거합니다. (이제 숨기지 않고 옆으로 밀어둘 것입니다) */
+    display: block !important; 
+    width: 25%;                /* 전체 400% 중 정확히 4분의 1(화면 너비의 100%)씩 차지 */
+    flex-shrink: 0;            /* 가로 공간이 부족해도 카드가 찌그러지지 않도록 보호 */
 }
 
 .fixed-panel.active { 
