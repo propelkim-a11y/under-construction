@@ -404,11 +404,22 @@ ctx.lineWidth = 1.5;
     const w = tRightX - tLeftX; 
     const h = tBottomY - tTopY;
 
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(tLeftX, tTopY, w, h);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(tLeftX, tTopY, w, h);
     ctx.strokeStyle = '#1d1d1f'; ctx.lineWidth = 2; ctx.strokeRect(tLeftX, tTopY, w, h);
     ctx.fillStyle = '#1d1d1f'; ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.08, w * 0.8, h * 0.15);
     ctx.fillRect(tLeftX + w * 0.1, tTopY + h * 0.3, w * 0.8, h * 0.62);
-    ctx.fillStyle = '#ff3b30'; ctx.beginPath(); ctx.arc(tLeftX + w * 0.5, (tTopY + h * 0.3) + (h * 0.62) * 0.5, w * 0.23, 0, Math.PI * 2); ctx.fill();
+    
+    // 과녁도 역시 동일한 압축률을 적용하여 정면도와 100% 같은 모양의 타원으로 표현
+    ctx.fillStyle = '#ff3b30'; 
+    ctx.beginPath(); 
+    ctx.ellipse(
+      tLeftX + w * 0.5, 
+      (tTopY + h * 0.3) + (h * 0.62) * 0.5, 
+      w * 0.23, 
+      h * 0.23 * (dynamicTgtProjH / TGT_PROJ_H), 
+      0, 0, Math.PI * 2
+    ); 
+    ctx.fill();
 
     if (hasIntersectedTargetPlane) {
       const localYFromBottom = targetHitMetrics.localY + (TGT_PROJ_H / 2);
