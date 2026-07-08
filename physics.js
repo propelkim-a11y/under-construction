@@ -420,7 +420,7 @@ ctx.lineWidth = 1.5;
     ctx.ellipse(
       tLeftX + w * 0.5, 
       (tTopY + h * 0.3) + (h * 0.62) * 0.5, 
-      w * 0.23, 
+      (w * 0.23) * (finalProjW / TGT_W), // 🔥 사수 좌우 위치에 따른 가로 압축 공식 결합!
       (w * 0.23) * (finalProjH / TGT_H),
       0, 0, Math.PI * 2
     ); 
