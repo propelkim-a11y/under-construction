@@ -295,3 +295,55 @@ function closeIntro() {
         }, 300);
     }
 }
+// =========================================================
+// 🎯 하단 설정 카드 좌우 스와이프(밀기) 전환 시스템 추가
+// =========================================================
+const panelContainer = document.getElementById('panel-container');
+
+if (panelContainer) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    // 탭 순서 정의
+    const tabsOrder = ['arrow', 'method', 'env', 'result'];
+
+    panelContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    panelContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].clientX;
+        touchEndY = e.changedTouches[0].clientY;
+        handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+
+        // 수평 스와이프 조건 (대각선 오작동 방지: 수평 이동이 수직 이동보다 커야 함)
+        if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY)) {
+            // 현재 활성화된 패널 찾기
+            const activePanel = document.querySelector('.fixed-panel.active');
+            if (!activePanel) return;
+            
+            const currentType = activePanel.id.replace('panel-', '');
+            const currentIndex = tabsOrder.indexOf(currentType);
+
+            if (deltaX < 0) {
+                // ◀ 왼쪽으로 밀기 (다음 패널로 이동)
+                if (currentIndex < tabsOrder.length - 1) {
+                    switchPanel(tabsOrder[currentIndex + 1]);
+                }
+            } else {
+                // ▶ 오른쪽으로 밀기 (이전 패널로 이동)
+                if (currentIndex > 0) {
+                    switchPanel(tabsOrder[currentIndex - 1]);
+                }
+            }
+        }
+    }
+}
