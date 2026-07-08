@@ -2,46 +2,39 @@ const INPUT_IDS = [
   'weight', 'diameter', 'dragCoeff', 'liftCoeff',
   'angle', 'velocity', 'yawAngle', 'launchHeight', 'launchZ',
   'windX', 'windY', 'targetHeight', 'airDensity',
-  'losTargetY', 'losTargetZ'
+  'losTargetY', 'losTargetZ' // 💡 LOS 수동 입력 ID 추가 (useLos는 체크박스이므로 별도 처리하거나 제외)
 ];
 
 function saveSettings() {
-  try {
-    INPUT_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) localStorage.setItem('arrow_sim_' + id, el.value);
-    });
+  INPUT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) localStorage.setItem('arrow_sim_' + id, el.value);
+  });
     const useLosEl = document.getElementById('useLos');
     if (useLosEl) localStorage.setItem('arrow_sim_useLos', useLosEl.checked ? 'true' : 'false');
-  } catch (e) {
-    console.warn("saveSettings 차단됨:", e);
-  }
 }
 
 function loadSettings() {
-  try {
-    INPUT_IDS.forEach(id => {
-      const savedValue = localStorage.getItem('arrow_sim_' + id);
-      const el = document.getElementById(id);
-      if (el && savedValue !== null) {
-        el.value = savedValue;
-      }
-    });
+  INPUT_IDS.forEach(id => {
+    const savedValue = localStorage.getItem('arrow_sim_' + id);
+    const el = document.getElementById(id);
+    if (el && savedValue !== null) {
+      el.value = savedValue;
+    }
+  });
     const useLosEl = document.getElementById('useLos');
     const savedLos = localStorage.getItem('arrow_sim_useLos');
-    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true'); 
-  } catch (e) {
-    console.warn("loadSettings 차단됨:", e);
-  }
+    if (useLosEl && savedLos !== null) useLosEl.checked = (savedLos === 'true');   
 }
 
 function switchPanel(type) {
-  if (typeof saveSettings === 'function') saveSettings();
+  saveSettings();
   const panels = ['arrow', 'method', 'env', 'result'];
   panels.forEach(p => {
     const el = document.getElementById('panel-' + p);
     if (el) el.classList.remove('active');
   });
+
   const targetPanel = document.getElementById('panel-' + type);
   if (targetPanel) {
     targetPanel.classList.add('active');
@@ -73,14 +66,14 @@ const NEGATIVE_ALLOWED_IDS = ['angle', 'yawAngle', 'windX', 'windY', 'targetHeig
 
 window.addEventListener('DOMContentLoaded', () => {
   loadSettings();
-  const useLosEl = document.getElementById('useLos');
-  if (useLosEl) {
-    useLosEl.addEventListener('change', () => {
-      if (typeof saveSettings === 'function') saveSettings();
-      if (typeof drawScene === 'function') drawScene();
-    });
-  }
- 
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) {
+        useLosEl.addEventListener('change', () => {
+           if (typeof saveSettings === 'function') saveSettings();
+           if (typeof drawScene === 'function') drawScene();
+  });
+}
+    
   INPUT_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -91,113 +84,112 @@ window.addEventListener('DOMContentLoaded', () => {
           val = val.replace(/(?!^)-/g, '');
           const parts = val.split('.');
           if (parts.length > 2) {
-            // 🎯 [버그 수정 완료] parts를 parts[0]으로 명확히 교정하여 먹통 버그 해결
             val = parts[0] + '.' + parts.slice(1).join('');
           }
           el.value = val;
         }
-        if (typeof saveSettings === 'function') saveSettings();
+        saveSettings();
         if (typeof drawScene === 'function') drawScene();
       });
     }
   });
 
+  // =========================================================================
+  // [💡 위치 기억 기능 추가] 무제한 스크린 프리 드래그 제어 시스템
+  // =========================================================================
   const dragBtn = document.getElementById('draggableFireBtn');
-  if (dragBtn) {
-    let isDragging = false;
-    let hasMoved = false;
-    let startX = 0, startY = 0;
-    let initialLeft = 0, initialTop = 0;
+  if (!dragBtn) return;
 
-    function loadButtonPosition() {
-      try {
-        const savedLeft = localStorage.getItem('arrow_sim_btn_left');
-        const savedTop = localStorage.getItem('arrow_sim_btn_top');
-        if (savedLeft !== null && savedTop !== null) {
-          dragBtn.style.left = savedLeft;
-          dragBtn.style.top = savedTop;
-          dragBtn.style.right = 'auto';
-        }
-      } catch(e) {
-        console.warn("loadButtonPosition 차단됨:", e);
-      }
+  let isDragging = false;
+  let hasMoved = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  // 이전 사용 위치 복원 함수
+  function loadButtonPosition() {
+    const savedLeft = localStorage.getItem('arrow_sim_btn_left');
+    const savedTop = localStorage.getItem('arrow_sim_btn_top');
+    
+    if (savedLeft !== null && savedTop !== null) {
+      dragBtn.style.left = savedLeft;
+      dragBtn.style.top = savedTop;
+      dragBtn.style.right = 'auto'; // 초기 CSS 우측 고정 해제
     }
-
-    function startDrag(e) {
-      isDragging = true;
-      hasMoved = false;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      startX = clientX;
-      startY = clientY;
-      const rect = dragBtn.getBoundingClientRect();
-      initialLeft = rect.left;
-      initialTop = rect.top;
-    }
-
-    function doDrag(e) {
-      if (!isDragging) return;
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const deltaX = clientX - startX;
-      const deltaY = clientY - startY;
-      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-        hasMoved = true;
-      }
-      let newLeft = initialLeft + deltaX;
-      let newTop = initialTop + deltaY;
-      const maxLeft = window.innerWidth - dragBtn.offsetWidth;
-      const maxTop = window.innerHeight - dragBtn.offsetHeight;
-      newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      newTop = Math.max(0, Math.min(newTop, maxTop));
-      dragBtn.style.left = newLeft + 'px';
-      dragBtn.style.top = newTop + 'px';
-      dragBtn.style.right = 'auto';
-    }
-
-    function endDrag(e) {
-      if (!isDragging) return;
-      isDragging = false;
-      if (!hasMoved) {
-        if (typeof fireArrow === 'function') fireArrow();
-      } else {
-        try {
-          localStorage.setItem('arrow_sim_btn_left', dragBtn.style.left);
-          localStorage.setItem('arrow_sim_btn_top', dragBtn.style.top);
-        } catch(e) {
-          console.warn("버튼 위치 저장 차단됨:", e);
-        }
-      }
-    }
-
-    loadButtonPosition();
-    dragBtn.addEventListener('touchstart', startDrag, { passive: true });
-    window.addEventListener('touchmove', doDrag, { passive: false });
-    window.addEventListener('touchend', endDrag);
-    dragBtn.addEventListener('mousedown', startDrag);
-    window.addEventListener('mousemove', doDrag);
-    window.addEventListener('mouseup', endDrag);
   }
 
+  function startDrag(e) {
+    isDragging = true;
+    hasMoved = false;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startX = clientX;
+    startY = clientY;
+    const rect = dragBtn.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+  }
+
+  function doDrag(e) {
+    if (!isDragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const deltaX = clientX - startX;
+    const deltaY = clientY - startY;
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      hasMoved = true;
+    }
+    let newLeft = initialLeft + deltaX;
+    let newTop = initialTop + deltaY;
+
+    // 브라우저 뷰포트 전체 크기를 기준으로 가둠
+    const maxLeft = window.innerWidth - dragBtn.offsetWidth;
+    const maxTop = window.innerHeight - dragBtn.offsetHeight;
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+
+    dragBtn.style.left = newLeft + 'px';
+    dragBtn.style.top = newTop + 'px';
+    dragBtn.style.right = 'auto';
+  }
+
+  function endDrag(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    if (!hasMoved) {
+      if (typeof fireArrow === 'function') fireArrow();
+    } else {
+      // 드래그 이동이 정상적으로 완료되면 로컬스토리지에 위치 좌표 저장
+      localStorage.setItem('arrow_sim_btn_left', dragBtn.style.left);
+      localStorage.setItem('arrow_sim_btn_top', dragBtn.style.top);
+    }
+  }
+
+  // 초기 실행 시 저장된 버튼 위치 불러오기
+  loadButtonPosition();
+
+  // 이벤트 리스너 등록
+  dragBtn.addEventListener('touchstart', startDrag, { passive: true });
+  window.addEventListener('touchmove', doDrag, { passive: false });
+  window.addEventListener('touchend', endDrag);
+  dragBtn.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', doDrag);
+  window.addEventListener('mouseup', endDrag);
+ 
   const useLosCheck = document.getElementById('useLos');
   if (useLosCheck) {
-    try {
-      const savedLos = localStorage.getItem('arrow_sim_useLos');
-      useLosCheck.checked = (savedLos === 'true');
-    } catch(e) {
-      console.warn("useLos 복원 차단됨:", e);
-    }
+    // 로컬스토리지에서 기존 상태 복원
+    const savedLos = localStorage.getItem('arrow_sim_useLos');
+    useLosCheck.checked = (savedLos === 'true');
+
+    // 변경될 때마다 저장하고 화면 리드로우
     useLosCheck.addEventListener('change', () => {
-      try {
-        localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
-      } catch(e) {
-        console.warn("useLos 저장 차단됨:", e);
-      }
+      localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
       if (typeof drawScene === 'function') drawScene();
     });
-  } 
+  }  
+  
 });
-
+// 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
   const introModal = document.getElementById('introModal');
   if (introModal) {
@@ -205,6 +197,101 @@ function closeIntro() {
     introModal.style.visibility = 'hidden';
     setTimeout(() => {
       introModal.style.display = 'none';
-    }, 300);
+    }, 300); // CSS transition 시간(0.3s)과 일치시켜 부드럽게 제거
   }
+}
+
+// =========================================================
+// 🎯 과녁도 표보기 조준점 실시간 터치/마우스 드래그 시스템 (최종 검증 완결본)
+// =========================================================
+let isTargetDragging = false;
+const simCanvasEl = document.getElementById('simCanvas');
+
+if (simCanvasEl) {
+    simCanvasEl.addEventListener('mousedown', startTargetDrag);
+    simCanvasEl.addEventListener('touchstart', startTargetDrag, { passive: false });
+}
+
+window.addEventListener('mousemove', doTargetDrag);
+window.addEventListener('touchmove', doTargetDrag, { passive: false });
+window.addEventListener('mouseup', endTargetDrag);
+window.addEventListener('touchend', endTargetDrag);
+
+function startTargetDrag(e) {
+    if (typeof currentView !== 'undefined' && currentView !== 'target') return;
+    if (e.touches) e.preventDefault(); 
+    isTargetDragging = true;
+    updateTargetCoords(e);
+}
+
+function doTargetDrag(e) {
+    if (!isTargetDragging) return;
+    if (typeof currentView !== 'undefined' && currentView !== 'target') return;
+    if (e.touches) e.preventDefault();
+    updateTargetCoords(e);
+}
+
+function endTargetDrag(e) {
+    isTargetDragging = false;
+}
+
+function updateTargetCoords(e) {
+    const canvasEl = document.getElementById('simCanvas');
+    if (!canvasEl) return;
+
+    const rect = canvasEl.getBoundingClientRect();
+    let clientX, clientY;
+
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    const currentDprWidth = canvasEl.width / (window.devicePixelRatio || 1);
+    const currentDprHeight = canvasEl.height / (window.devicePixelRatio || 1);
+
+    const canvasX = clientX - rect.left;
+    const canvasY = clientY - rect.top;
+
+    const tBottomY = currentDprHeight * 0.75;
+    const targetViewScale = Math.min(currentDprWidth, currentDprHeight) / 5.5;
+
+    const calculatedZ = (canvasX - (currentDprWidth / 2)) / targetViewScale;
+    const calculatedY = (tBottomY - canvasY) / targetViewScale;
+
+    const losYEl = document.getElementById('losTargetY');
+    const losZEl = document.getElementById('losTargetZ');
+    const useLosEl = document.getElementById('useLos');
+
+    if (losYEl && losZEl) {
+        losYEl.value = calculatedY.toFixed(2);
+        losZEl.value = calculatedZ.toFixed(2);
+
+        if (useLosEl && !useLosEl.checked) {
+            useLosEl.checked = true;
+        }
+
+        localStorage.setItem('arrow_sim_losTargetY', losYEl.value);
+        localStorage.setItem('arrow_sim_losTargetZ', losZEl.value);
+        localStorage.setItem('arrow_sim_useLos', 'true');
+
+        if (typeof drawScene === 'function') {
+            window.requestAnimationFrame(drawScene);
+        }
+    }
+}
+
+// 인트로 공지사항 모달 닫기 함수 (안전 재배치)
+function closeIntro() {
+    const introModal = document.getElementById('introModal');
+    if (introModal) {
+        introModal.style.opacity = '0';
+        introModal.style.visibility = 'hidden';
+        setTimeout(() => {
+            introModal.style.display = 'none';
+        }, 300);
+    }
 }
