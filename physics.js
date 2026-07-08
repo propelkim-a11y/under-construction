@@ -451,8 +451,12 @@ ctx.lineWidth = 1.5;
      const losY = parseFloat(document.getElementById('losTargetY').value) || 1.3;
      const losZ = parseFloat(document.getElementById('losTargetZ').value) || 0.0;
 
-     const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
-     const losScreenY = tBottomY - (losY * targetViewScale);
+     //const losScreenX = (dprWidth / 2) + (losZ * targetViewScale);
+     //const losScreenY = tBottomY - (losY * targetViewScale);
+     // 💡 과녁의 찌그러진 가로/세로 비율(finalProjW / TGT_W 등)을 곱해주어, 
+     // 눈에 보이는 압축된 과녁 모양과 조준선의 위치를 완벽하게 정렬합니다.
+     const losScreenX = (dprWidth / 2) + ((losZ / TGT_W) * finalProjW * targetViewScale);
+     const losScreenY = tBottomY - ((losY / TGT_H) * finalProjH * targetViewScale);
 
      ctx.save();
      ctx.strokeStyle = '#ff9500'; // 주황색
