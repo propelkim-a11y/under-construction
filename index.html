@@ -49,13 +49,17 @@
 <div class="main-screen">
     <h1>Arrow Trajectory</h1>
     
-    <div class="segmented-control">
-        <!-- 각 버튼 클릭 시 switchPanel 함수를 호출하고 패널 키워드를 넘겨줍니다 -->
-        <button class="segment-btn active" onclick="changeView('front', this); switchPanel('arrow')">정면</button>
-        <button class="segment-btn" onclick="changeView('side', this); switchPanel('method')">측면</button>
-        <button class="segment-btn" onclick="changeView('top', this); switchPanel('env')">평면</button>
-        <button class="segment-btn" onclick="changeView('target', this); switchPanel('result')">과녁</button>
-    </div>
+<div class="segmented-control">
+    <!-- 정면을 누르면 'arrow' 패널로 슬라이딩 -->
+    <button class="segment-btn active" onclick="changeView('front', this); switchPanel('arrow')">정면</button>
+    <!-- 측면을 누르면 'method' 패널로 슬라이딩 -->
+    <button class="segment-btn" onclick="changeView('side', this); switchPanel('method')">측면</button>
+    <!-- 평면을 누르면 'env' 패널로 슬라이딩 -->
+    <button class="segment-btn" onclick="changeView('top', this); switchPanel('env')">평면</button>
+    <!-- 과녁을 누르면 'result' 패널로 슬라이딩 -->
+    <button class="segment-btn" onclick="changeView('target', this); switchPanel('result')">과녁</button>
+</div>
+
     
     <div class="sim-container">
         <canvas id="simCanvas"></canvas>
