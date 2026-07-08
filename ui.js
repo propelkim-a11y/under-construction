@@ -348,68 +348,79 @@ if (panelContainer) {
     }
 }
 // =========================================================
-// 🎯 상단 시뮬레이터 화면 좌우 스와이프(밀기) 뷰 전환 시스템 추가
+// 🎯 [터치 감지 강화] 하단 설정 카드 부드러운 스와이프 시스템
 // =========================================================
-const simContainer = document.querySelector('.sim-container');
+(function() {
+    const panelContainer = document.getElementById('panel-container');
+    if (!panelContainer) return;
 
-if (simContainer) {
-    let simTouchStartX = 0;
-    let simTouchStartY = 0;
-    let simTouchEndX = 0;
-    let simTouchEndY = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    let isTracking = false;
+    
+    const tabsOrder = ['arrow', 'method', 'env', 'result'];
+    let currentIndex = 0;
 
-    // 뷰 순서 정의 (정면 -> 측면 -> 평면 -> 과녁)
-    const viewsOrder = ['front', 'side', 'top', 'target'];
-
-    simContainer.addEventListener('touchstart', (e) => {
-        // 발시 버튼 드래그와 충돌 방지 (발시 버튼 터치 시 스와이프 무시)
-        if (e.target.id === 'draggableFireBtn') return;
+    window.updatePanelPositionByTab = function(type) {
+        currentIndex = tabsOrder.indexOf(type);
+        if (currentIndex === -1) currentIndex = 0;
         
-        simTouchStartX = e.touches[0].clientX;
-        simTouchStartY = e.touches[0].clientY;
+        panelContainer.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+        currentTranslate = currentIndex * -window.innerWidth;
+        prevTranslate = currentTranslate;
+        panelContainer.style.transform = `translateX(${currentTranslate}px)`;
+    };
+
+    // 터치 시작 (좌표 감지 강화)
+    panelContainer.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isTracking = true;
+        panelContainer.style.transition = 'none';
     }, { passive: true });
 
-    simContainer.addEventListener('touchend', (e) => {
-        if (e.target.id === 'draggableFireBtn') return;
+    // 터치 이동 (실시간 추적 강화)
+    panelContainer.addEventListener('touchmove', (e) => {
+        if (!isTracking || !e.touches || e.touches.length === 0) return;
         
-        simTouchEndX = e.changedTouches[0].clientX;
-        simTouchEndY = e.changedTouches[0].clientY;
-        handleSimSwipe();
-    }, { passive: true });
-
-    function handleSimSwipe() {
-        const deltaX = simTouchEndX - simTouchStartX;
-        const deltaY = simTouchEndY - simTouchStartY;
-
-        // 수평 스와이프 조건 (민감도 60px 기준, 수평 이동이 수직 이동보다 커야 함)
-        if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY)) {
-            // 현재 활성화된 뷰(currentView)의 인덱스 찾기
-            // 단, index.html 구조상 버튼 엘리먼트도 함께 넘겨주어야 스타일이 바뀝니다.
-            if (typeof currentView === 'undefined') return;
-            
-            const currentIndex = viewsOrder.indexOf(currentView);
-            let targetView = '';
-
-            if (deltaX < 0) {
-                // ◀ 왼쪽으로 밀기 (다음 뷰로 이동: 정면 -> 측면 -> 평면 -> 과녁)
-                if (currentIndex < viewsOrder.length - 1) {
-                    targetView = viewsOrder[currentIndex + 1];
-                }
-            } else {
-                // ▶ 오른쪽으로 밀기 (이전 뷰로 이동: 과녁 -> 평면 -> 측면 -> 정면)
-                if (currentIndex > 0) {
-                    targetView = viewsOrder[currentIndex - 1];
-                }
-            }
-
-            // 변경할 뷰가 결정되었다면, 상단 세그먼트 버튼 엘리먼트를 찾아서 함께 전달
-            if (targetView) {
-                const btnSelector = `.segmented-control .segment-btn[onclick*="${targetView}"]`;
-                const targetBtnEl = document.querySelector(btnSelector);
-                
-                // 기존 changeView 함수 호출
-                changeView(targetView, targetBtnEl);
-            }
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        
+        const deltaX = currentX - touchStartX;
+        const deltaY = currentY - touchStartY;
+        
+        // 확실하게 좌우로 조작할 때만 슬라이더 작동
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            const moveX = prevTranslate + deltaX;
+            panelContainer.style.transform = `translateX(${moveX}px)`;
         }
-    }
-}
+    }, { passive: true });
+
+    // 터치 끝 (스프링 탄성 작동)
+    panelContainer.addEventListener('touchend', (e) => {
+        if (!isTracking) return;
+        isTracking = false;
+        
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const deltaX = touchEndX - touchStartX;
+        
+        panelContainer.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+        
+        // 살짝만 밀어도 넘어가도록 민감도 조정 (화면 너비의 10%)
+        const threshold = window.innerWidth * 0.1;
+        
+        if (deltaX < -threshold && currentIndex < tabsOrder.length - 1) {
+            currentIndex++;
+        } else if (deltaX > threshold && currentIndex > 0) {
+            currentIndex--;
+        }
+        
+        if (typeof switchPanel === 'function') {
+            switchPanel(tabsOrder[currentIndex]);
+        }
+    }, { passive: true });
+})();
