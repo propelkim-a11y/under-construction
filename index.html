@@ -50,10 +50,11 @@
     <h1>Arrow Trajectory</h1>
     
     <div class="segmented-control">
-        <button class="segment-btn" onclick="changeView('front', this)">정면</button>
-        <button class="segment-btn active" onclick="changeView('side', this)">측면</button>
-        <button class="segment-btn" onclick="changeView('top', this)">평면</button>
-        <button class="segment-btn" onclick="changeView('target', this)">과녁</button>
+        <!-- 각 버튼 클릭 시 switchPanel 함수를 호출하고 패널 키워드를 넘겨줍니다 -->
+        <button class="segment-btn active" onclick="changeView('front', this); switchPanel('arrow')">정면</button>
+        <button class="segment-btn" onclick="changeView('side', this); switchPanel('method')">측면</button>
+        <button class="segment-btn" onclick="changeView('top', this); switchPanel('env')">평면</button>
+        <button class="segment-btn" onclick="changeView('target', this); switchPanel('result')">과녁</button>
     </div>
     
     <div class="sim-container">
