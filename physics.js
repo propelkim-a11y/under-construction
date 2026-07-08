@@ -233,10 +233,14 @@ const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5
 // 사대부터 과녁까지의 수평 거리 구하기
 const hDist = Math.sqrt(Math.pow(TARGET_SLANT_R, 2) - Math.pow(safeTargetH, 2)); 
 // 사수의 상하 시선 앙각(라디안) 구하기
+// 사수와 과녁 사이의 상하 시선각 (위로 올려다볼수록 +값)
 const losPitchRad = Math.atan2(safeTargetH - launchH, hDist); 
 
 // 고도차와 시선 각도가 반영된 "동적 과녁 겉보기 세로 높이" 계산 (원래 투영 높이 2.58m를 대체)
-const dynamicTgtProjH = TGT_H * Math.cos(TGT_TILT + losPitchRad);
+// 과녁이 15도(TGT_TILT) 뒤로 누워있으므로, 시선각이 -15도일 때 사잇각이 0도가 되어 cos(0)=1 (완전 원)이 됩니다.
+// 고도가 올라가 시선각이 커질수록 사잇각이 벌어져 cos 값이 작아집니다 (납작해짐).
+const dynamicTgtProjH = TGT_H * Math.cos(losPitchRad - TGT_TILT);
+    
 // ==========================================    
 
 function toScreen(pX, pY, pZ) {
@@ -379,7 +383,7 @@ ctx.lineWidth = 1.5;
       leftX + w * 0.5, 
       (topY + h * 0.3) + (h * 0.62) * 0.5, 
       w * 0.23, 
-      h * 0.23 * (dynamicTgtProjH / TGT_PROJ_H), 
+      h * 0.23 * (dynamicTgtProjH / TGT_H), 
       0, 0, Math.PI * 2
     ); 
     ctx.fill();
@@ -416,7 +420,7 @@ ctx.lineWidth = 1.5;
       tLeftX + w * 0.5, 
       (tTopY + h * 0.3) + (h * 0.62) * 0.5, 
       w * 0.23, 
-      h * 0.23 * (dynamicTgtProjH / TGT_PROJ_H), 
+      h * 0.23 * (dynamicTgtProjH / TGT_H), 
       0, 0, Math.PI * 2
     ); 
     ctx.fill();
