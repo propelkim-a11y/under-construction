@@ -225,6 +225,19 @@ const topScaleSide = (dprWidth - 20) / (MAX_WORLD_Z * 2);
 const frontScaleZ = (dprWidth - ORIGIN_X_OFFSET - 20) / (MAX_WORLD_Z * 2); 
 const frontScaleY = availH / MAX_WORLD_Y;
 const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
+// ==========================================
+// 📐 [1단계] 과녁 고도에 따른 동적 세로 높이 연산 추가
+// ==========================================
+const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+
+// 사대부터 과녁까지의 수평 거리 구하기
+const hDist = Math.sqrt(Math.pow(TARGET_SLANT_R, 2) - Math.pow(safeTargetH, 2)); 
+// 사수의 상하 시선 앙각(라디안) 구하기
+const losPitchRad = Math.atan2(safeTargetH - launchH, hDist); 
+
+// 고도차와 시선 각도가 반영된 "동적 과녁 겉보기 세로 높이" 계산 (원래 투영 높이 2.58m를 대체)
+const dynamicTgtProjH = TGT_H * Math.cos(TGT_TILT + losPitchRad);
+// ==========================================    
 
 function toScreen(pX, pY, pZ) {
   if (currentView === 'side') {
@@ -349,7 +362,7 @@ ctx.lineWidth = 1.5;
     const leftX = toScreen(targetBaseX, safeTargetH, -TGT_W / 2).x; 
     const rightX = toScreen(targetBaseX, safeTargetH, TGT_W / 2).x;
     const bottomY = toScreen(targetBaseX, safeTargetH, 0).y; 
-    const topY = toScreen(targetBaseX, safeTargetH + TGT_PROJ_H, 0).y;
+    const topY = toScreen(targetBaseX, safeTargetH + dynamicTgtProjH, 0).y; // 🔥 동적 높이 변수로 교체!
     const w = rightX - leftX; 
     const h = bottomY - topY;
 
@@ -374,7 +387,7 @@ ctx.lineWidth = 1.5;
     const tLeftX = (dprWidth / 2) - (TGT_W / 2 * targetViewScale); 
     const tRightX = (dprWidth / 2) + (TGT_W / 2 * targetViewScale);
     const tBottomY = dprHeight * 0.75; 
-    const tTopY = tBottomY - (TGT_PROJ_H * targetViewScale);
+    const tTopY = tBottomY - (dynamicTgtProjH * targetViewScale); // 🔥 동적 높이 변수로 교체 
     const w = tRightX - tLeftX; 
     const h = tBottomY - tTopY;
 
