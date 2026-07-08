@@ -28,19 +28,19 @@ function loadSettings() {
 }
 
 function switchPanel(type) {
-  saveSettings();
-  const panels = ['arrow', 'method', 'env', 'result'];
-  panels.forEach(p => {
-    const el = document.getElementById('panel-' + p);
-    if (el) el.classList.remove('active');
-  });
-
-  const targetPanel = document.getElementById('panel-' + type);
-  if (targetPanel) {
-    targetPanel.classList.add('active');
-  }
-  updateTabActiveStyle(type);
-  if (typeof drawScene === 'function') drawScene();
+    saveSettings(); // 현재 입력된 화살/사법 설정값 저장 (기존 유지)
+    
+    // 💡 [핵심 수정] 기존의 클래스 지우기(.fixed-panel active 제거) 로직을 과감히 생략합니다.
+    // 숨기는 방식(display:none) 대신 가로로 정렬된 슬라이더 위치만 부드럽게 이동시킵니다.
+    if (typeof window.updatePanelPositionByTab === 'function') {
+        window.updatePanelPositionByTab(type);
+    }
+    
+    // 맨 하단 메뉴 탭바 버튼의 활성화 스타일(파란색 불 켜기)을 업데이트합니다
+    updateTabActiveStyle(type); 
+    
+    // 화면을 실시간으로 다시 그려줍니다
+    if (typeof drawScene === 'function') drawScene(); 
 }
 
 function updateTabActiveStyle(type) {
