@@ -225,26 +225,14 @@ const topScaleSide = (dprWidth - 20) / (MAX_WORLD_Z * 2);
 const frontScaleZ = (dprWidth - ORIGIN_X_OFFSET - 20) / (MAX_WORLD_Z * 2); 
 const frontScaleY = availH / MAX_WORLD_Y;
 const targetViewScale = Math.min(dprWidth, dprHeight) / 5.5;
-// ==========================================
-// 📐 [1단계] 과녁 고도에 따른 동적 세로 높이 연산 추가
-// ==========================================
+// 📐 [1단계 수식 주입 완료] 고도에 따른 동적 세로 계산식
 const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-// (디버깅용 안전 가드: 투영 높이가 실제 높이보다 커지지 않도록 한계 설정)
-const finalProjH = Math.min(TGT_H, dynamicTgtProjH);
-    
-// 사대부터 과녁까지의 수평 거리 구하기
 const hDist = Math.sqrt(Math.pow(TARGET_SLANT_R, 2) - Math.pow(safeTargetH, 2)); 
-// 사수의 상하 시선 앙각(라디안) 구하기
-// 사수와 과녁 사이의 상하 시선각 (위로 올려다볼수록 +값)
+const losPitchRad = Math.atan2(safeTargetH - launchH, hDist); 
 const dynamicTgtProjH = TGT_H * Math.cos(losPitchRad + TGT_TILT);
-
-// 고도차와 시선 각도가 반영된 "동적 과녁 겉보기 세로 높이" 계산 (원래 투영 높이 2.58m를 대체)
-// 과녁이 15도(TGT_TILT) 뒤로 누워있으므로, 시선각이 -15도일 때 사잇각이 0도가 되어 cos(0)=1 (완전 원)이 됩니다.
-// 고도가 올라가 시선각이 커질수록 사잇각이 벌어져 cos 값이 작아집니다 (납작해짐).
-const dynamicTgtProjH = TGT_H * Math.cos(losPitchRad - TGT_TILT);
+const finalProjH = isNaN(dynamicTgtProjH) ? TGT_PROJ_H : Math.min(TGT_H, dynamicTgtProjH);
+window.currentDynamicTgtProjH = finalProjH;
     
-// ==========================================    
-
 function toScreen(pX, pY, pZ) {
   if (currentView === 'side') {
     return { x: ORIGIN_X_OFFSET + (pX * scaleX), y: dprHeight - GROUND_Y_OFFSET - (pY * scaleY) };
@@ -368,7 +356,7 @@ ctx.lineWidth = 1.5;
     const leftX = toScreen(targetBaseX, safeTargetH, -TGT_W / 2).x; 
     const rightX = toScreen(targetBaseX, safeTargetH, TGT_W / 2).x;
     const bottomY = toScreen(targetBaseX, safeTargetH, 0).y; 
-    const topY = toScreen(targetBaseX, safeTargetH + dynamicTgtProjH, 0).y; // 🔥 동적 높이 변수로 교체!
+    const topY = toScreen(targetBaseX, safeTargetH + finalProjH, 0).y;
     const w = rightX - leftX; 
     const h = bottomY - topY;
 
