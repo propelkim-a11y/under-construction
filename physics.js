@@ -78,11 +78,11 @@ function fireArrow() {
  if (isFlying) {
    if (!isPaused) {
      isPaused = true;
-     if (fireBtn) fireBtn.innerText = "재개";
-     cancelAnimationFrame(animationFrameId); // 💡 추가: 애니메이션 계산을 실제로 일시정지!
+     if (fireBtn) fireBtn.innerText = "계속";
+     cancelAnimationFrame(animationFrameId); // 💡 추가: 애니메이션 계산을 실제로 정지!
    } else {
      isPaused = false;
-     if (fireBtn) fireBtn.innerText = "일시정지";
+     if (fireBtn) fireBtn.innerText = "정지";
      animate(); // 💡 추가: 멈췄던 애니메이션 루프를 다시 실행!
    }
    return; 
@@ -90,7 +90,7 @@ function fireArrow() {
 
  if (typeof saveSettings === 'function') saveSettings();
  isPaused = false; 
- if (fireBtn) fireBtn.innerText = "일시정지"; 
+ if (fireBtn) fireBtn.innerText = "정지"; 
 
  const v0 = parseFloat(document.getElementById('velocity').value) || 50;
 
@@ -233,7 +233,7 @@ function animate() {
  
  drawScene();
  
- // 3. 일시정지가 아닐 때만 다음 프레임 애니메이션 요청
+ // 3. 정지가 아닐 때만 다음 프레임 애니메이션 요청
  if (isFlying && !isPaused) { 
    animationFrameId = requestAnimationFrame(animate); 
  }
