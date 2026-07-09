@@ -61,7 +61,7 @@ function updateTabActiveStyle(type) {
   }
 }
 
-// 💡 ui.js 맨 아래에 있는 기존 파일 관리 스크립트를 이것으로 통째로 교체하세요.
+// 💡 여기서부터 끝까지 복사해서 붙여넣으세요
 (function initSettingsFileFeature() {
     const saveBtn = document.getElementById('saveSettingsBtn');
     const loadBtn = document.getElementById('loadSettingsBtn');
@@ -72,7 +72,7 @@ function updateTabActiveStyle(type) {
         return;
     }
 
-    // [1] 설정 파일 저장 기능
+    // 1. 파일 저장 기능
     saveBtn.onclick = function() {
         const settingsData = {};
         const inputs = document.querySelectorAll('input, select');
@@ -107,12 +107,12 @@ function updateTabActiveStyle(type) {
         }
     };
 
-    // [2] 설정 파일 열기 트리거
+    // 2. 파일 열기 트리거
     loadBtn.onclick = function() {
         fileInput.click();
     };
 
-    // [3] 파일 불러오기 및 엔진 강제 동기화
+    // 3. 파일 로드 및 강제 강동기화 로직
     fileInput.onchange = function(e) {
         const file = e.target.files;
         if (!file) return;
@@ -123,7 +123,7 @@ function updateTabActiveStyle(type) {
                 const settingsData = JSON.parse(event.target.result);
                 let updateCount = 0;
                 
-                // 1단계: 모든 수치를 입력창에 주입
+                // [A단계] 각 DOM 엘리먼트에 값 강제 주입 및 기본 속성 업데이트
                 for (const id in settingsData) {
                     const el = document.getElementById(id);
                     if (el) {
@@ -131,33 +131,44 @@ function updateTabActiveStyle(type) {
                             el.checked = settingsData[id];
                         } else {
                             el.value = settingsData[id];
+                            // 기본 value 속성도 브라우저 동기화를 위해 업데이트
+                            el.setAttribute('value', settingsData[id]);
                         }
                         updateCount++;
                     }
                 }
                 
                 if (updateCount > 0) {
-                    // 2단계: 💡 주입된 수치들을 기반으로 기존 시뮬레이터 시스템 강제 깨우기
-                    
-                    // 수치 저장 전역함수가 있다면 실행
+                    // [B단계] 💡 시뮬레이터 고유 전역 상태 저장 함수 강제 실행
                     if (typeof saveSettings === 'function') {
                         saveSettings();
                     }
-                    
-                    // 입력창 전체를 돌며 브라우저에 값 변경 강제 알림 (실시간 감지용)
+
+                    // [C단계] 💡 각 입력창에 바인딩된 원본 이벤트 리스너(oninput, onchange) 직접 실행
                     const allInputs = document.querySelectorAll('input, select');
                     allInputs.forEach(input => {
+                        // 1. 순수 JS 객체 레벨 이벤트 강제 호출
+                        if (typeof input.oninput === 'function') input.oninput({ target: input });
+                        if (typeof input.onchange === 'function') input.onchange({ target: input });
+                        
+                        // 2. addEventListener용 표준 이벤트 전파
                         input.dispatchEvent(new Event('input', { bubbles: true }));
                         input.dispatchEvent(new Event('change', { bubbles: true }));
                     });
                     
-                    // 물리 엔진 업데이트 관련 후보 함수들 전부 강제 호출
-                    if (typeof updatePhysics === 'function') updatePhysics();
-                    if (typeof updateSimulation === 'function') updateSimulation();
-                    if (typeof calculateTrajectory === 'function') calculateTrajectory();
-                    if (typeof onInputChange === 'function') onInputChange();
+                    // [D단계] 💡 예상되는 시뮬레이터 물리 연산/UI 최신화 함수들 강제 일괄 구동
+                    const updateFunctions = [
+                        'updatePhysics', 'updateSimulation', 'calculateTrajectory', 
+                        'onInputChange', 'updateValues', 'initSimulation', 'resetSimulation'
+                    ];
+                    
+                    updateFunctions.forEach(funcName => {
+                        if (typeof window[funcName] === 'function') {
+                            window[funcName]();
+                        }
+                    });
 
-                    // 3단계: 화면(캔버스) 강제 리드로우
+                    // [E단계] 💡 전역 드로우 함수 실행하여 궤적 화면 즉시 갱신
                     if (typeof drawScene === 'function') {
                         drawScene();
                         window.requestAnimationFrame(drawScene);
@@ -176,6 +187,7 @@ function updateTabActiveStyle(type) {
         fileInput.value = ''; 
     };
 })();
+
 
 
 // 💡 [여기서부터 복사해서 붙여넣으세요]
