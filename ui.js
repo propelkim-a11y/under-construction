@@ -61,6 +61,122 @@ function updateTabActiveStyle(type) {
   }
 }
 
+// 💡 ui.js 맨 아래에 있는 기존 파일 관리 스크립트를 이것으로 통째로 교체하세요.
+(function initSettingsFileFeature() {
+    const saveBtn = document.getElementById('saveSettingsBtn');
+    const loadBtn = document.getElementById('loadSettingsBtn');
+    const fileInput = document.getElementById('settingsFileInput');
+
+    if (!saveBtn || !loadBtn || !fileInput) {
+        window.addEventListener('DOMContentLoaded', initSettingsFileFeature);
+        return;
+    }
+
+    // [1] 설정 파일 저장 기능
+    saveBtn.onclick = function() {
+        const settingsData = {};
+        const inputs = document.querySelectorAll('input, select');
+        
+        inputs.forEach(input => {
+            if (input.type === 'file' || input.type === 'button' || input.type === 'submit') return;
+            if (input.id) {
+                if (input.id.includes('Btn')) return;
+                if (input.type === 'checkbox') {
+                    settingsData[input.id] = input.checked;
+                } else {
+                    settingsData[input.id] = input.value;
+                }
+            }
+        });
+
+        let fileName = prompt("저장할 설정 파일의 이름을 입력하세요:", "arrow_simulator_settings");
+        if (fileName === null) return;
+        if (!fileName.trim()) fileName = "arrow_simulator_settings";
+        if (!fileName.endsWith('.json')) fileName += '.json';
+
+        try {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settingsData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        } catch (err) {
+            alert("파일 저장 중 오류가 발생했습니다: " + err.message);
+        }
+    };
+
+    // [2] 설정 파일 열기 트리거
+    loadBtn.onclick = function() {
+        fileInput.click();
+    };
+
+    // [3] 파일 불러오기 및 엔진 강제 동기화
+    fileInput.onchange = function(e) {
+        const file = e.target.files;
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const settingsData = JSON.parse(event.target.result);
+                let updateCount = 0;
+                
+                // 1단계: 모든 수치를 입력창에 주입
+                for (const id in settingsData) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (el.type === 'checkbox') {
+                            el.checked = settingsData[id];
+                        } else {
+                            el.value = settingsData[id];
+                        }
+                        updateCount++;
+                    }
+                }
+                
+                if (updateCount > 0) {
+                    // 2단계: 💡 주입된 수치들을 기반으로 기존 시뮬레이터 시스템 강제 깨우기
+                    
+                    // 수치 저장 전역함수가 있다면 실행
+                    if (typeof saveSettings === 'function') {
+                        saveSettings();
+                    }
+                    
+                    // 입력창 전체를 돌며 브라우저에 값 변경 강제 알림 (실시간 감지용)
+                    const allInputs = document.querySelectorAll('input, select');
+                    allInputs.forEach(input => {
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    
+                    // 물리 엔진 업데이트 관련 후보 함수들 전부 강제 호출
+                    if (typeof updatePhysics === 'function') updatePhysics();
+                    if (typeof updateSimulation === 'function') updateSimulation();
+                    if (typeof calculateTrajectory === 'function') calculateTrajectory();
+                    if (typeof onInputChange === 'function') onInputChange();
+
+                    // 3단계: 화면(캔버스) 강제 리드로우
+                    if (typeof drawScene === 'function') {
+                        drawScene();
+                        window.requestAnimationFrame(drawScene);
+                    }
+
+                    alert("설정 파일 값을 완벽하게 반영했습니다!");
+                } else {
+                    alert("파일 내에 현재 시뮬레이터와 일치하는 설정 ID가 없습니다.");
+                }
+            } catch (error) {
+                alert("올바르지 않은 설정 파일 양식(.json)입니다.");
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+        fileInput.value = ''; 
+    };
+})();
+
 
 // 💡 [여기서부터 복사해서 붙여넣으세요]
 (function initSettingsFileFeature() {
