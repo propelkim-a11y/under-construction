@@ -265,9 +265,15 @@ function updateTargetCoords(e) {
     const losYEl = document.getElementById('losTargetY');
     const losZEl = document.getElementById('losTargetZ');
     const useLosEl = document.getElementById('useLos');
+    const lockLosEl = document.getElementById('lockLos'); // 💡 고정 엘리먼트 가져오기 추가
     
     // 💡 [우선순위 제어] 표보기 설정(useLos)이 체크되어 있지 않다면 터치 입력을 무시하고 리턴합니다.
     if (!useLosEl || !useLosEl.checked) {
+        return;
+    }
+
+    // 💡 [새로 추가된 고정 기능] 고정 체크박스가 켜져 있다면 터치 입력을 무시하고 리턴합니다.
+    if (lockLosEl && lockLosEl.checked) {
         return;
     }
     
@@ -282,8 +288,8 @@ function updateTargetCoords(e) {
             window.requestAnimationFrame(drawScene);
         }
     }
-
 }
+
 
 // 인트로 공지사항 모달 닫기 함수 (안전 재배치)
 function closeIntro() {
