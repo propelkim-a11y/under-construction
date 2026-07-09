@@ -29,7 +29,10 @@ function loadSettings() {
 
 function switchPanel(type) {
   saveSettings();
-  const panels = ['arrow', 'method', 'env', 'result'];
+  
+  // 💡 기존 배열에 'settings-file'을 추가했습니다.
+  const panels = ['arrow', 'method', 'env', 'result', 'settings-file'];
+  
   panels.forEach(p => {
     const el = document.getElementById('panel-' + p);
     if (el) el.classList.remove('active');
@@ -39,9 +42,11 @@ function switchPanel(type) {
   if (targetPanel) {
     targetPanel.classList.add('active');
   }
+  
   updateTabActiveStyle(type);
   if (typeof drawScene === 'function') drawScene();
 }
+
 
 function updateTabActiveStyle(type) {
   const tabItems = document.querySelectorAll('.tab-bar .tab-item');
