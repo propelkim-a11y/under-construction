@@ -211,6 +211,12 @@ function updateResultUI() {
     const resPitch = document.getElementById('resImpactPitch');
     const resYaw = document.getElementById('resImpactYaw');
 
+    // 💡 안전장치: 시뮬레이션 에러를 방지하기 위해 각도 계산을 안전한 이곳으로 이동합니다.
+    if (typeof arrowState !== 'undefined') {
+        flightMetrics.impactPitch = (arrowState.pitch || 0) * (180 / Math.PI);
+        flightMetrics.impactYaw = (arrowState.yaw || 0) * (180 / Math.PI);
+    }
+
     if (resDist) resDist.innerText = flightMetrics.maxDistance.toFixed(2) + " m";
     if (resHeight) resHeight.innerText = flightMetrics.maxHeight.toFixed(2) + " m";
     if (resSide) resSide.innerText = flightMetrics.sideDeviation.toFixed(2) + " m";
@@ -220,6 +226,7 @@ function updateResultUI() {
     if (resPitch) resPitch.innerText = flightMetrics.impactPitch.toFixed(2) + " °";
     if (resYaw) resYaw.innerText = flightMetrics.impactYaw.toFixed(2) + " °";
 }
+
 
 
 function drawScene() {
