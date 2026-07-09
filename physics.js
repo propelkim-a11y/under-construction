@@ -47,6 +47,8 @@ let flightMetrics = {
     flightTime: 0,
     impactVelocity: 0,
     impactEnergy: 0
+    impactPitch: 0,  // 👈 탄착 고각 저장용 빈 방
+    impactYaw: 0     // 👈 탄착 편각 저장용 빈 방
 };
 
 let targetHitMetrics = {
@@ -173,6 +175,9 @@ function animate() {
         } else {
             targetHitMetrics.isHit = false;
         }
+      // 💡 [새로 추가할 코드] 탄착 순간의 물리 각도를 도(°) 단위로 변환해 저장합니다.
+        flightMetrics.impactPitch = arrowState.pitch * (180 / Math.PI);
+        flightMetrics.impactYaw = arrowState.yaw * (180 / Math.PI);
     }
 
     if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
@@ -203,12 +208,19 @@ function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
     const resSide = document.getElementById('resSideDev'); const resTime = document.getElementById('resFlightTime');
     const resVel = document.getElementById('resImpactVel'); const resEnergy = document.getElementById('resImpactEnergy');
+    // 👈 [추가 1] 여기에 2줄이 추가되었습니다.
+    const resPitch = document.getElementById('resImpactPitch');
+    const resYaw = document.getElementById('resImpactYaw');
+
     if (resDist) resDist.innerText = flightMetrics.maxDistance.toFixed(2) + " m";
     if (resHeight) resHeight.innerText = flightMetrics.maxHeight.toFixed(2) + " m";
     if (resSide) resSide.innerText = flightMetrics.sideDeviation.toFixed(2) + " m";
     if (resTime) resTime.innerText = flightMetrics.flightTime.toFixed(2) + " s";
     if (resVel) resVel.innerText = flightMetrics.impactVelocity.toFixed(2) + " m/s";
     if (resEnergy) resEnergy.innerText = flightMetrics.impactEnergy.toFixed(2) + " J";
+    // 👈 [추가 2] 여기에 2줄이 추가되었습니다.
+    if (resPitch) resPitch.innerText = flightMetrics.impactPitch.toFixed(2) + " °";
+    if (resYaw) resYaw.innerText = flightMetrics.impactYaw.toFixed(2) + " °";
 }
 
 function drawScene() {
