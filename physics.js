@@ -35,6 +35,7 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', resizeCanvas);
 
 let isFlying = false;
+let isPaused = false;
 let animationFrameId = null;
 let trajectory = [];
 
@@ -72,10 +73,28 @@ function getDynamicTargetGeometry() {
 }
 
 function fireArrow() {
-    if (isFlying) cancelAnimationFrame(animationFrameId);
-    if (typeof saveSettings === 'function') saveSettings();
+     const fireBtn = document.getElementById('draggableFireBtn'); // 발시 버튼 가져오기
+
+ // 1. 만약 이미 화살이 날아가고 있는 상태라면?
+     if (isFlying) {
+       if (!isPaused) {
+        isPaused = true;
+        if (fireBtn) fireBtn.innerText = "재개";
+   } else {
+     isPaused = false;
+     if (fireBtn) fireBtn.innerText = "일시정지";
+   }
+   return; // 이미 날아가는 중일 때는 아래쪽의 새 화살 쏘기 로직을 타지 않음
+ }
+
+ // 2. 화살이 안 날아가고 있을 때 새로 쏘는 경우 (기존 로직)
+ if (typeof saveSettings === 'function') saveSettings();
+ isPaused = false; 
+ if (fireBtn) fireBtn.innerText = "일시정지"; 
 
     const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+
+    
     const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
     const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
     const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
