@@ -208,7 +208,6 @@ function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
     const resSide = document.getElementById('resSideDev'); const resTime = document.getElementById('resFlightTime');
     const resVel = document.getElementById('resImpactVel'); const resEnergy = document.getElementById('resImpactEnergy');
-    // 👈 [추가 1] 여기에 2줄이 추가되었습니다.
     const resPitch = document.getElementById('resImpactPitch');
     const resYaw = document.getElementById('resImpactYaw');
 
@@ -218,10 +217,10 @@ function updateResultUI() {
     if (resTime) resTime.innerText = flightMetrics.flightTime.toFixed(2) + " s";
     if (resVel) resVel.innerText = flightMetrics.impactVelocity.toFixed(2) + " m/s";
     if (resEnergy) resEnergy.innerText = flightMetrics.impactEnergy.toFixed(2) + " J";
-    // 👈 [추가 2] 여기에 2줄이 추가되었습니다.
     if (resPitch) resPitch.innerText = flightMetrics.impactPitch.toFixed(2) + " °";
     if (resYaw) resYaw.innerText = flightMetrics.impactYaw.toFixed(2) + " °";
 }
+
 
 function drawScene() {
     if (dprWidth === 0 || dprHeight === 0) return;
