@@ -71,44 +71,87 @@ function getDynamicTargetGeometry() {
     return { baseX: targetBaseX, height: safeTargetH };
 }
 
+// 🎯 [1단계 변수 추가] 기존 isFlying 아래에 일시정지 상태 변수를 추가합니다.
+let isFlying = false;
+let isPaused = false; // 일시정지 상태 추적용 변수 생성
+let animationFrameId = null;
+let trajectory = [];
+let arrowState = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, pitch: 0, yaw: 0 };
+
+// ... (중간에 과녁 기하학 연산 함수 등은 그대로 유지) ...
+
 function fireArrow() {
-    if (isFlying) cancelAnimationFrame(animationFrameId);
-    if (typeof saveSettings === 'function') saveSettings();
+ const fireBtn = document.getElementById('draggableFireBtn');
 
-    const v0 = parseFloat(document.getElementById('velocity').value) || 50;
-    const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
-    const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
-    const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
-    const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
-    
-    const pitchRad = (angleDeg * Math.PI) / 180;
-    const yawRad = (yawDeg * Math.PI) / 180;
+ // 🎯 [포우즈 로직] 화살이 이미 비행 중일 때 발시 버튼을 다시 누른 경우
+ if (isFlying) {
+     if (!isPaused) {
+         // 비행 중 -> 일시정지 상태로 전환
+         isPaused = true;
+         if (fireBtn) fireBtn.innerText = "재개";
+     } else {
+         // 일시정지 상태 -> 다시 비행 재생
+         isPaused = false;
+         if (fireBtn) fireBtn.innerText = "일시정지";
+         animate(); // 멈췄던 물리 루프를 다시 깨웁니다.
+     }
+     return; // 새로 화살을 쏘는 아래 로직으로 내려가지 못하게 차단합니다.
+ }
 
-    arrowState.x = 0; 
-    arrowState.y = launchH; 
-    arrowState.z = launchZ;
-    
-    arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
-    arrowState.vy = v0 * Math.sin(pitchRad);
-    arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
-    
-    arrowState.pitch = pitchRad; 
-    arrowState.yaw = yawRad;
+ // 🎯 [새 발시 로직] 화살을 처음 새로 발시하는 순간
+ if (isFlying) cancelAnimationFrame(animationFrameId);
+ if (typeof saveSettings === 'function') saveSettings();
+ 
+ isPaused = false; // 일시정지 상태 해제
+ if (fireBtn) fireBtn.innerText = "일시정지"; // 버튼 글자를 일시정지로 변경
 
-    flightMetrics = { maxDistance: 0, maxHeight: launchH, sideDeviation: 0, flightTime: 0, impactVelocity: v0, impactEnergy: 0 };
-    targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
-    hasReachedTargetX = false;
-    hasReachedTargetY = false;
-    hasIntersectedTargetPlane = false;
-    
-    updateResultUI();
-    trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
-    isFlying = true;
-    animate();
+ const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+ const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
+ const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
+ const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
+ const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
+ 
+ const pitchRad = (angleDeg * Math.PI) / 180;
+ const yawRad = (yawDeg * Math.PI) / 180;
+ arrowState.x = 0; 
+ arrowState.y = launchH; 
+ arrowState.z = launchZ;
+ 
+ arrowState.vx = v0 * Math.cos(pitchRad) * Math.cos(yawRad);
+ arrowState.vy = v0 * Math.sin(pitchRad);
+ arrowState.vz = v0 * Math.cos(pitchRad) * Math.sin(yawRad);
+ 
+ arrowState.pitch = pitchRad; 
+ arrowState.yaw = yawRad;
+
+ // 🎯 [4단계 리셋 주입 완료] 새 화살을 쏠 때 충돌 각도 데이터를 0으로 깨끗이 비웁니다.
+ flightMetrics = { 
+     maxDistance: 0, 
+     maxHeight: launchH, 
+     sideDeviation: 0, 
+     flightTime: 0,
+     impactVelocity: v0, 
+     impactEnergy: 0,
+     tgtImpactPitch: 0, 
+     tgtImpactYaw: 0 
+ };
+
+ targetHitMetrics = { isHit: false, localZ: 0, localY: 0 };
+ hasReachedTargetX = false;
+ hasReachedTargetY = false;
+ hasIntersectedTargetPlane = false;
+ 
+ updateResultUI();
+ trajectory = [{ x: arrowState.x, y: arrowState.y, z: arrowState.z }];
+ isFlying = true;
+ animate();
 }
 
+
+
 function animate() {
-    if (!isFlying) return;
+    if (!isFlying || isPaused) return; // 🎯 일시정지 상태라면 물리 계산을 멈추고 대기합니다.
+
 
     const cd = parseFloat(document.getElementById('dragCoeff').value) || 0;
     const cl = parseFloat(document.getElementById('liftCoeff').value) || 0;
@@ -152,6 +195,12 @@ function animate() {
     trajectory.push({ x: arrowState.x, y: arrowState.y, z: arrowState.z });
 
     if (!hasReachedTargetX) { flightMetrics.flightTime += dt; }
+   // 🎯 아직 과녁 평면에 도달하지 않았다면 실시간 비행 자세(각도)를 계속 데이터로 생성
+    if (!hasIntersectedTargetPlane) {
+        flightMetrics.tgtImpactPitch = (arrowState.pitch * 180) / Math.PI;
+        flightMetrics.tgtImpactYaw = (arrowState.yaw * 180) / Math.PI;
+    }
+   
     if (arrowState.y > flightMetrics.maxHeight) { flightMetrics.maxHeight = arrowState.y; }
 
     const nx = Math.cos(TGT_TILT); const ny = -Math.sin(TGT_TILT);
@@ -191,13 +240,35 @@ function animate() {
         flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
     }
 
-    updateResultUI();
-    if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
-    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
+    // ... (위쪽 물리 계산 및 과녁 충돌 판정 코드는 그대로 두고, 아래 하단부를 교체합니다)
 
+    updateResultUI();
+
+    // 🎯 1. 화살이 땅에 닿았을 때 종료 처리
+    if (arrowState.y <= 0) { 
+        arrowState.y = 0; 
+        isFlying = false; 
+        updateResultUI(); 
+        
+        const fireBtn = document.getElementById('draggableFireBtn');
+        if (fireBtn) fireBtn.innerText = "발시";
+    }
+
+    // 🎯 2. 화살이 맵 밖으로 벗어났을 때 종료 처리
+    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { 
+        isFlying = false; 
+        
+        const fireBtn = document.getElementById('draggableFireBtn');
+        if (fireBtn) fireBtn.innerText = "발시";
+    }
+
+    // 🎯 3. 화면을 새로 그리고 비행 중이면 다음 프레임 연산 호출
     drawScene();
-    if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
-}
+    if (isFlying && !isPaused) { 
+        animationFrameId = requestAnimationFrame(animate); 
+    }
+} // 👈 animate 함수의 맨 마지막 닫는 괄호입니다.
+
 
 function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
@@ -209,7 +280,21 @@ function updateResultUI() {
     if (resTime) resTime.innerText = flightMetrics.flightTime.toFixed(2) + " s";
     if (resVel) resVel.innerText = flightMetrics.impactVelocity.toFixed(2) + " m/s";
     if (resEnergy) resEnergy.innerText = flightMetrics.impactEnergy.toFixed(2) + " J";
-}
+
+    // 🎯 중괄호 안으로 들어왔습니다!
+    const resPitch = document.getElementById('resImpactPitch');
+    const resYaw = document.getElementById('resImpactYaw');
+    
+    if (resPitch) {
+        const pVal = flightMetrics.tgtImpactPitch !== undefined ? flightMetrics.tgtImpactPitch : 0;
+        resPitch.innerText = pVal.toFixed(2) + " °";
+    }
+    if (resYaw) {
+        const yVal = flightMetrics.tgtImpactYaw !== undefined ? flightMetrics.tgtImpactYaw : 0;
+        resYaw.innerText = yVal.toFixed(2) + " °";
+    }
+} // 🎯 함수의 닫는 괄호가 여기로 와야 합니다.
+
 
 function drawScene() {
     if (dprWidth === 0 || dprHeight === 0) return;
