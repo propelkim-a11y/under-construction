@@ -61,6 +61,103 @@ function updateTabActiveStyle(type) {
   }
 }
 
+
+// 💡 [여기서부터 복사해서 붙여넣으세요]
+(function initSettingsFileFeature() {
+    const saveBtn = document.getElementById('saveSettingsBtn');
+    const loadBtn = document.getElementById('loadSettingsBtn');
+    const fileInput = document.getElementById('settingsFileInput');
+
+    if (!saveBtn || !loadBtn || !fileInput) {
+        window.addEventListener('DOMContentLoaded', initSettingsFileFeature);
+        return;
+    }
+
+    saveBtn.onclick = function() {
+        const settingsData = {};
+        const inputs = document.querySelectorAll('input, select');
+        
+        inputs.forEach(input => {
+            if (input.type === 'file' || input.type === 'button' || input.type === 'submit') return;
+            if (input.id) {
+                if (input.id.includes('Btn')) return;
+                if (input.type === 'checkbox') {
+                    settingsData[input.id] = input.checked;
+                } else {
+                    settingsData[input.id] = input.value;
+                }
+            }
+        });
+
+        let fileName = prompt("저장할 설정 파일의 이름을 입력하세요:", "arrow_simulator_settings");
+        if (fileName === null) return;
+        if (!fileName.trim()) fileName = "arrow_simulator_settings";
+        if (!fileName.endsWith('.json')) fileName += '.json';
+
+        try {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settingsData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        } catch (err) {
+            alert("파일 저장 중 오류가 발생했습니다: " + err.message);
+        }
+    };
+
+    loadBtn.onclick = function() {
+        fileInput.click();
+    };
+
+    fileInput.onchange = function(e) {
+        const file = e.target.files;
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const settingsData = JSON.parse(event.target.result);
+                let updateCount = 0;
+                
+                for (const id in settingsData) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (el.type === 'checkbox') {
+                            el.checked = settingsData[id];
+                        } else {
+                            el.value = settingsData[id];
+                        }
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        updateCount++;
+                    }
+                }
+                
+                if (updateCount > 0) {
+                    alert("설정 파일 값을 성공적으로 불러왔습니다!");
+                    if (typeof saveSettings === 'function') {
+                        saveSettings();
+                    }
+                    if (typeof drawScene === 'function') {
+                        window.requestAnimationFrame(drawScene);
+                    }
+                } else {
+                    alert("파일 내에 현재 시뮬레이터와 일치하는 설정 ID가 없습니다.");
+                }
+            } catch (error) {
+                alert("올바르지 않은 설정 파일 양식(.json)입니다.");
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+    };
+})();
+// 💡 [여기까지가 끝입니다]
+
+
 let currentView = 'side';
 function changeView(viewType, element) {
   const buttons = document.querySelectorAll('.segmented-control .segment-btn');
