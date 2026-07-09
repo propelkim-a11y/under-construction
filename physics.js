@@ -35,7 +35,6 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', resizeCanvas);
 
 let isFlying = false;
-let isPaused = false;
 let animationFrameId = null;
 let trajectory = [];
 
@@ -73,28 +72,11 @@ function getDynamicTargetGeometry() {
 }
 
 function fireArrow() {
- const fireBtn = document.getElementById('draggableFireBtn'); 
+    if (isFlying) cancelAnimationFrame(animationFrameId);
+    if (typeof saveSettings === 'function') saveSettings();
 
- if (isFlying) {
-   if (!isPaused) {
-     isPaused = true;
-     if (fireBtn) fireBtn.innerText = "계속";
-     cancelAnimationFrame(animationFrameId); // 💡 추가: 애니메이션 계산을 실제로 정지!
-   } else {
-     isPaused = false;
-     if (fireBtn) fireBtn.innerText = "정지";
-     animate(); // 💡 추가: 멈췄던 애니메이션 루프를 다시 실행!
-   }
-   return; 
- }
-
- if (typeof saveSettings === 'function') saveSettings();
- isPaused = false; 
- if (fireBtn) fireBtn.innerText = "정지"; 
-
- const v0 = parseFloat(document.getElementById('velocity').value) || 50;
-
-
+    const v0 = parseFloat(document.getElementById('velocity').value) || 50;
+    const angleDeg = parseFloat(document.getElementById('angle').value) || 0;
     const yawDeg = parseFloat(document.getElementById('yawAngle').value) || 0;
     const launchH = parseFloat(document.getElementById('launchHeight').value) || 1.5;
     const launchZ = parseFloat(document.getElementById('launchZ').value) || 0; 
@@ -209,35 +191,13 @@ function animate() {
         flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
     }
 
- updateResultUI();
- 
- // 1. 화살이 땅에 떨어져서 비행이 종료될 때
- if (arrowState.y <= 0) { 
-   arrowState.y = 0; 
-   isFlying = false; 
-   updateResultUI(); 
-   
-   // 💡 추가: 비행이 끝났으니 버튼을 다시 '발시'로 원상복구
-   const fireBtn = document.getElementById('draggableFireBtn');
-   if (fireBtn) fireBtn.innerText = "발시";
- }
- 
- // 2. 화살이 너무 멀리 날아가서 비행이 종료될 때
- if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { 
-   isFlying = false; 
-   
-   // 💡 추가: 비행이 끝났으니 버튼을 다시 '발시'로 원상복구
-   const fireBtn = document.getElementById('draggableFireBtn');
-   if (fireBtn) fireBtn.innerText = "발시";
- }
- 
- drawScene();
- 
- // 3. 정지가 아닐 때만 다음 프레임 애니메이션 요청
- if (isFlying && !isPaused) { 
-   animationFrameId = requestAnimationFrame(animate); 
- }
+    updateResultUI();
+    if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
+    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
 
+    drawScene();
+    if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
+}
 
 function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
