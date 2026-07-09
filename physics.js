@@ -108,98 +108,97 @@ function fireArrow() {
 }
 
 function animate() {
-  // 💡 1. 일시정지 상태여도 이미 날아간 화살의 그림(drawScene)은 화면에 그려주어야 합니다.
-  // 단, 일시정지 중일 때는 물리의 시간(dt) 계산과 위치 이동만 건너뜁니다.
-  if (isFlying && !isPaused) {
-    let dt = 0.016; 
-    let g = parseFloat(document.getElementById('gravity').value) || 9.8;
-    let m = parseFloat(document.getElementById('mass').value) || 0.035;
-    let diameter = parseFloat(document.getElementById('diameter').value) || 0.0075;
-    let windX = parseFloat(document.getElementById('windX').value) || 0;
-    let windY = parseFloat(document.getElementById('windY').value) || 0;
-    let windZ = parseFloat(document.getElementById('windZ').value) || 0;
-    
-    let isFletching = document.getElementById('fletchingCheck') ? document.getElementById('fletchingCheck').checked : true;
-    let isHeavyPoint = document.getElementById('heavyPointCheck') ? document.getElementById('heavyPointCheck').checked : true;
-    
-    let dragCoef = parseFloat(document.getElementById('dragCoef').value) || 0.3;
-    let liftCoef = parseFloat(document.getElementById('liftCoef').value) || 0.1;
+    if (!isFlying) return;
 
-    let speed = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
+    const cd = parseFloat(document.getElementById('dragCoeff').value) || 0;
+    const cl = parseFloat(document.getElementById('liftCoeff').value) || 0;
+    const d = (parseFloat(document.getElementById('diameter').value) || 5.5) / 1000; 
+    const m = (parseFloat(document.getElementById('weight').value) || 25) / 1000;    
+    const rho = parseFloat(document.getElementById('airDensity').value) || 1.225;
+    const windX = parseFloat(document.getElementById('windX').value) || 0; 
+    const windZ = parseFloat(document.getElementById('windY').value) || 0; 
 
-    if (speed > 0.001) {
-      let relVx = arrowState.vx - windX;
-      let relVy = arrowState.vy - windY;
-      let relVz = arrowState.vz - windZ;
-      let relSpeed = Math.sqrt(relVx * relVx + relVy * relVy + relVz * relVz);
+    const g = 9.81; const dt = 0.016; const area = Math.PI * Math.pow(d / 2, 2); 
+    const tgtGeo = getDynamicTargetGeometry();
+    const targetBaseX = tgtGeo.baseX; const targetH = tgtGeo.height;   
 
-      if (relSpeed > 0.001) {
-        let rho = 1.225;
-        let area = Math.PI * (diameter / 2) * (diameter / 2);
-        let fd = 0.5 * rho * relSpeed * relSpeed * dragCoef * area;
+    const relVx = arrowState.vx - windX; const relVy = arrowState.vy; const relVz = arrowState.vz - windZ;
+    const vRel = Math.sqrt(relVx * relVx + relVy * relVy + relVz * relVz) || 0.001;
 
-        let dragFx = -fd * (relVx / relSpeed);
-        let dragFy = -fd * (relVy / relSpeed);
-        let dragFz = -fd * (relVz / relSpeed);
+    const flowPitch = Math.atan2(relVy, Math.sqrt(relVx * relVx + relVz * relVz));
+    const flowYaw = Math.atan2(relVz, relVx);
+    const attackAngle = arrowState.pitch - flowPitch;
 
-        let liftFx = 0, liftFy = 0, liftFz = 0;
-        if (isFletching) {
-          let alpha = 0.02; 
-          let fl = 0.5 * rho * relSpeed * relSpeed * liftCoef * area * alpha;
-          liftFy = fl; 
-        }
+    const effectiveArea = area * 2.5; 
+    const dynamicLiftCoeff = 2.0 * Math.sin(attackAngle) * Math.cos(attackAngle);
+    const dragF = 0.5 * rho * vRel * vRel * cd * effectiveArea;
+    const liftF = 0.5 * rho * vRel * vRel * (cl + dynamicLiftCoeff) * effectiveArea;
 
-        let ax = dragFx / m;
-        let ay = -g + (dragFy + liftFy) / m;
-        let az = dragFz / m;
+    const dragAx = (-dragF * Math.cos(flowPitch) * Math.cos(flowYaw)) / m;
+    const dragAy = (-dragF * Math.sin(flowPitch)) / m;
+    const dragAz = (-dragF * Math.cos(flowPitch) * Math.sin(flowYaw)) / m;
+    const liftAx = (-liftF * Math.sin(flowPitch) * Math.cos(flowYaw)) / m;
+    const liftAy = (liftF * Math.cos(flowPitch)) / m;
+    const liftAz = (-liftF * Math.sin(flowPitch) * Math.sin(flowYaw)) / m;
 
-        arrowState.vx += ax * dt;
-        arrowState.vy += ay * dt;
-        arrowState.vz += az * dt;
-      }
-    } else {
-      arrowState.vy += -g * dt;
-    }
+    const ax = dragAx + liftAx; const ay = -g + dragAy + liftAy; const az = dragAz + liftAz;
+    const prevX = arrowState.x; const prevY = arrowState.y; const prevZ = arrowState.z;
 
-    arrowState.x += arrowState.vx * dt;
-    arrowState.y += arrowState.vy * dt;
-    arrowState.z += arrowState.vz * dt;
+    arrowState.vx += ax * dt; arrowState.vy += ay * dt; arrowState.vz += az * dt;
+    arrowState.x += arrowState.vx * dt; arrowState.y += arrowState.vy * dt; arrowState.z += arrowState.vz * dt;
 
-    if (isHeavyPoint) {
-      // 필요 시 고도 변화 로직 유지
-    }
-
+    arrowState.pitch = Math.atan2(arrowState.vy, Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vz * arrowState.vz));
+    arrowState.yaw = Math.atan2(arrowState.vz, arrowState.vx);
     trajectory.push({ x: arrowState.x, y: arrowState.y, z: arrowState.z });
 
-    // 충돌 감지 로직
-    checkCollisionWithDynamicTarget();
-  }
+    if (!hasReachedTargetX) { flightMetrics.flightTime += dt; }
+    if (arrowState.y > flightMetrics.maxHeight) { flightMetrics.maxHeight = arrowState.y; }
 
-  // 💡 2. [핵심] 물리 연산이 멈췄더라도(isPaused), 그림을 그리는 함수는 무조건 실행합니다.
-  updateResultUI();
+    const nx = Math.cos(TGT_TILT); const ny = -Math.sin(TGT_TILT);
+    const distPrev = nx * (prevX - targetBaseX) + ny * (prevY - targetH);
+    const distCurr = nx * (arrowState.x - targetBaseX) + ny * (arrowState.y - targetH);
 
-  if (arrowState.y <= 0) {
-    arrowState.y = 0;
-    isFlying = false;
+    if (!hasIntersectedTargetPlane && distPrev * distCurr <= 0 && prevX < arrowState.x) {
+        hasIntersectedTargetPlane = true;
+        const s = Math.abs(distPrev) / (Math.abs(distPrev) + Math.abs(distCurr));
+        const interY = prevY + (arrowState.y - prevY) * s;
+        const interZ = prevZ + (arrowState.z - prevZ) * s;
+        const centerWorldY = targetH + (TGT_H / 2) * Math.cos(TGT_TILT);
+
+        targetHitMetrics.localZ = interZ;
+        targetHitMetrics.localY = (interY - centerWorldY) / Math.cos(TGT_TILT);
+
+        if (Math.abs(targetHitMetrics.localZ) <= TGT_W / 2 && Math.abs(targetHitMetrics.localY) <= TGT_H / 2) {
+            targetHitMetrics.isHit = true;
+        } else {
+            targetHitMetrics.isHit = false;
+        }
+    }
+
+    if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
+    if (!hasReachedTargetY && arrowState.vy <= 0 && prevY >= targetH && arrowState.y <= targetH) {
+        hasReachedTargetY = true;
+        const t = (prevY - targetH) / (prevY - arrowState.y);
+        flightMetrics.maxDistance = prevX + (arrowState.x - prevX) * t;
+        flightMetrics.sideDeviation = prevZ + (arrowState.z - prevZ) * t;
+        const vFinal = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
+        flightMetrics.impactVelocity = vFinal; flightMetrics.impactEnergy = 0.5 * m * vFinal * vFinal;
+    }
+
+    if (!hasReachedTargetY) {
+        flightMetrics.maxDistance = arrowState.x; flightMetrics.sideDeviation = arrowState.z;
+        const vCurrent = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
+        flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
+    }
+
     updateResultUI();
-    const fireBtn = document.getElementById('draggableFireBtn');
-    if (fireBtn) fireBtn.innerText = "발시";
-  }
+    if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
+    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
 
-  if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) {
-    isFlying = false;
-    const fireBtn = document.getElementById('draggableFireBtn');
-    if (fireBtn) fireBtn.innerText = "발시";
-  }
-
-  // 💡 3. 화면을 렌더링하는 함수입니다. 일시정지 중에도 이 함수가 호출되어야 그림이 유지됩니다.
-  drawScene();
-
-  // 💡 4. 비행 중일 때는 일시정지 상태여도 루프를 계속 돌며 화면을 유지합니다.
-  if (isFlying) {
-    animationFrameId = requestAnimationFrame(animate);
-  }
+    drawScene();
+    if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
 }
+
 function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
     const resSide = document.getElementById('resSideDev'); const resTime = document.getElementById('resFlightTime');
