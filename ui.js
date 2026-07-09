@@ -51,8 +51,11 @@ function switchPanel(type) {
 function updateTabActiveStyle(type) {
   const tabItems = document.querySelectorAll('.tab-bar .tab-item');
   tabItems.forEach(item => item.classList.remove('active'));
-  const typeOrder = ['arrow', 'method', 'env', 'result'];
+  
+  // 💡 HTML 버튼 순서와 똑같이 맨 뒤에 'settings-file'을 추가했습니다.
+  const typeOrder = ['arrow', 'method', 'env', 'result', 'settings-file'];
   const activeIndex = typeOrder.indexOf(type);
+  
   if (activeIndex !== -1 && tabItems[activeIndex]) {
     tabItems[activeIndex].classList.add('active');
   }
