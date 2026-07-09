@@ -265,23 +265,24 @@ function updateTargetCoords(e) {
     const losYEl = document.getElementById('losTargetY');
     const losZEl = document.getElementById('losTargetZ');
     const useLosEl = document.getElementById('useLos');
-
+    
+    // 💡 [우선순위 제어] 표보기 설정(useLos)이 체크되어 있지 않다면 터치 입력을 무시하고 리턴합니다.
+    if (!useLosEl || !useLosEl.checked) {
+        return;
+    }
+    
     if (losYEl && losZEl) {
         losYEl.value = calculatedY.toFixed(2);
         losZEl.value = calculatedZ.toFixed(2);
-
-        if (useLosEl && !useLosEl.checked) {
-            useLosEl.checked = true;
-        }
-
+    
         localStorage.setItem('arrow_sim_losTargetY', losYEl.value);
         localStorage.setItem('arrow_sim_losTargetZ', losZEl.value);
-        localStorage.setItem('arrow_sim_useLos', 'true');
-
+    
         if (typeof drawScene === 'function') {
             window.requestAnimationFrame(drawScene);
         }
     }
+
 }
 
 // 인트로 공지사항 모달 닫기 함수 (안전 재배치)
