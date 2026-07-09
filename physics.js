@@ -47,8 +47,6 @@ let flightMetrics = {
     flightTime: 0,
     impactVelocity: 0,
     impactEnergy: 0
-    impactPitch: 0,  // 👈 탄착 고각 저장용 빈 방
-    impactYaw: 0     // 👈 탄착 편각 저장용 빈 방
 };
 
 let targetHitMetrics = {
@@ -175,9 +173,9 @@ function animate() {
         } else {
             targetHitMetrics.isHit = false;
         }
+    }
+
     if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
-    
-    // 1. 화살이 과녁 고도(지면)에 도달해 비행이 정상 종료될 때
     if (!hasReachedTargetY && arrowState.vy <= 0 && prevY >= targetH && arrowState.y <= targetH) {
         hasReachedTargetY = true;
         const t = (prevY - targetH) / (prevY - arrowState.y);
@@ -185,23 +183,13 @@ function animate() {
         flightMetrics.sideDeviation = prevZ + (arrowState.z - prevZ) * t;
         const vFinal = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
         flightMetrics.impactVelocity = vFinal; flightMetrics.impactEnergy = 0.5 * m * vFinal * vFinal;
-        
-        // 💡 [여기에 배치] 탄착 순간의 최종 각도를 안전하게 기록합니다.
-        flightMetrics.impactPitch = arrowState.pitch * (180 / Math.PI);
-        flightMetrics.impactYaw = arrowState.yaw * (180 / Math.PI);
     }
 
-    // 2. 아직 과녁 바닥 고도에 완전히 닿지 않은 실시간 비행 상태일 때 (보정용)
     if (!hasReachedTargetY) {
         flightMetrics.maxDistance = arrowState.x; flightMetrics.sideDeviation = arrowState.z;
         const vCurrent = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
         flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
-        
-        // 💡 비행 중일 때도 실시간으로 현재 각도를 계속 업데이트해 둡니다.
-        flightMetrics.impactPitch = arrowState.pitch * (180 / Math.PI);
-        flightMetrics.impactYaw = arrowState.yaw * (180 / Math.PI);
     }
-
 
     updateResultUI();
     if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
@@ -215,23 +203,13 @@ function updateResultUI() {
     const resDist = document.getElementById('resMaxDist'); const resHeight = document.getElementById('resMaxHeight');
     const resSide = document.getElementById('resSideDev'); const resTime = document.getElementById('resFlightTime');
     const resVel = document.getElementById('resImpactVel'); const resEnergy = document.getElementById('resImpactEnergy');
-    const resPitch = document.getElementById('resImpactPitch');
-    const resYaw = document.getElementById('resImpactYaw');
-
     if (resDist) resDist.innerText = flightMetrics.maxDistance.toFixed(2) + " m";
     if (resHeight) resHeight.innerText = flightMetrics.maxHeight.toFixed(2) + " m";
     if (resSide) resSide.innerText = flightMetrics.sideDeviation.toFixed(2) + " m";
     if (resTime) resTime.innerText = flightMetrics.flightTime.toFixed(2) + " s";
     if (resVel) resVel.innerText = flightMetrics.impactVelocity.toFixed(2) + " m/s";
     if (resEnergy) resEnergy.innerText = flightMetrics.impactEnergy.toFixed(2) + " J";
-    
-    // 💡 안전하게 저장된 탄착 각도 데이터를 화면에 출력합니다.
-    if (resPitch) resPitch.innerText = (flightMetrics.impactPitch || 0).toFixed(2) + " °";
-    if (resYaw) resYaw.innerText = (flightMetrics.impactYaw || 0).toFixed(2) + " °";
 }
-
-
-
 
 function drawScene() {
     if (dprWidth === 0 || dprHeight === 0) return;
