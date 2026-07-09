@@ -143,7 +143,26 @@
                 <div class="form-group"><label>비행 편각(Yaw)</label><div class="result-value" id="resImpactYaw">0.00 °</div></div>
             </div>
         </div>
-    </div>  
+    </div> 
+
+    <!-- [탭 5] 설정 저장/열기 -->
+    <div class="fixed-panel" id="panel-settings-file">
+        <div class="panel-card">
+            <div class="panel-title">설정 파일 관리</div>
+            <div style="padding: 10px 0; text-align: center;">
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px; line-height: 1.4;">
+                    현재 시뮬레이터의 모든 입력 수치와 조준선 상태를<br>
+                    파일로 내보내거나 다시 불러올 수 있습니다.
+                </p>
+                <div class="form-grid" style="display: flex; justify-content: center; gap: 10px;">
+                    <button type="button" id="saveSettingsBtn" style="padding: 10px 16px; font-size: 14px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; flex: 1;">💾 설정 파일 저장</button>
+                    <button type="button" id="loadSettingsBtn" style="padding: 10px 16px; font-size: 14px; cursor: pointer; background-color: #2196F3; color: white; border: none; border-radius: 4px; font-weight: bold; flex: 1;">📂 설정 파일 열기</button>
+                </div>
+                <!-- 실제 파일 선택 창 (숨김) -->
+                <input type="file" id="settingsFileInput" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>		
 </div>
 
 <!-- 💡 [위치 이동] 설정 패널 밖으로 완전히 탈출시켜 맨 아래 고정된 저작권 표시 영역 -->
