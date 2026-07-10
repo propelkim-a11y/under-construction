@@ -172,33 +172,53 @@ function animate() {
         targetHitMetrics.localZ = interZ;
         targetHitMetrics.localY = (interY - centerWorldY) / Math.cos(TGT_TILT);
 
-// ──────────────────────────────────────────────────────────
-// 💡 홍심/변죽 타격감 차별화 정밀 진동 시스템 적용 구간
-// ──────────────────────────────────────────────────────────
         if (Math.abs(targetHitMetrics.localZ) <= TGT_W / 2 && Math.abs(targetHitMetrics.localY) <= TGT_H / 2) {
             targetHitMetrics.isHit = true;
 
-            // 새 UI의 진동 알림 체크박스가 켜져 있고, 브라우저가 진동을 지원할 때만 실행
+            // 진동 기능 실행
             const useVibrateCheck = document.getElementById('useVibrate');
             if (useVibrateCheck && useVibrateCheck.checked && typeof navigator.vibrate === 'function') {
-                
-                // 과녁 중심(홍심)으로부터 화살이 꽂힌 절대 거리를 계산 (미터 단위)
                 const distanceFromCenter = Math.sqrt(
                     targetHitMetrics.localZ * targetHitMetrics.localZ + 
                     targetHitMetrics.localY * targetHitMetrics.localY
                 );
 
-                // 홍심 기준 (중심에서 반지름 25cm 이내 정중앙 명중 시)
                 if (distanceFromCenter < 0.25) {
-                    // 🎯 홍심 관중: 80ms 진동 -> 40ms 대기 -> 150ms 강력한 진동 (더블 콤보 손맛)
+                    // [80ms 진동, 40ms 쉬고, 150ms 진동] 배열 형식으로 정확히 수정
                     navigator.vibrate([80, 40, 150]);
                 } else {
-                    // 🏹 일반 관중: 120ms 동안 깔끔하게 징~ 한 번 진동
                     navigator.vibrate(120);
                 }
             }
         } else {
             targetHitMetrics.isHit = false;
+        }
+    }
+
+    if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
+    if (!hasReachedTargetY && arrowState.vy <= 0 && prevY >= targetH && arrowState.y <= targetH) {
+        hasReachedTargetY = true;
+        const t = (prevY - targetH) / (prevY - arrowState.y);
+        flightMetrics.maxDistance = prevX + (arrowState.x - prevX) * t;
+        flightMetrics.sideDeviation = prevZ + (arrowState.z - prevZ) * t;
+        const vFinal = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
+        flightMetrics.impactVelocity = vFinal; flightMetrics.impactEnergy = 0.5 * m * vFinal * vFinal;
+    }
+
+    if (!hasReachedTargetY) {
+        flightMetrics.maxDistance = arrowState.x; flightMetrics.sideDeviation = arrowState.z;
+        const vCurrent = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
+        flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
+    }
+
+    updateResultUI();
+    if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
+    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
+
+    drawScene();
+    if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
+}
+
         }
 
     if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
