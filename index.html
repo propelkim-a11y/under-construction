@@ -99,10 +99,11 @@
                 <div class="form-group"><label for="launchZ">궁사 위치 </label><div class="input-wrapper">
 					<input type="text" id="launchZ" value="0" min="-10" max="10" step="0.5"><span class="unit">m</span></div></div>
 				
-                <div class="setting-row" style="display: flex; gap: 15px; align-items: stretch; width: 100%; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; width: 100%; height: 38px; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; background: #ffffff; box-sizing: border-box;">
-                    <input type="checkbox" id="useVibration" checked style="margin: 0 8px 0 0; width: 16px; height: 16px; cursor: pointer;">
-                    <label for="useVibration" style="font-size: 14px; color: #333; margin: 0; cursor: pointer; user-select: none; font-weight: normal;">관중 시 진동</label></div></div>   
+                <div class="setting-item" style="flex: 1; display: flex; flex-direction: column;">
+                    <label style="font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #333;">진동 알림</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; height: 38px; border: 1px solid #ccc; border-radius: 4px; padding: 0 10px; background: #ffffff; box-sizing: border-box;">
+                    <label for="useVibration" style="font-size: 14px; color: #333; margin: 0; cursor: pointer; user-select: none; font-weight: normal;">관중 시 진동</label>
+                    <input type="checkbox" id="useVibration" checked style="margin: 0; width: 16px; height: 16px; cursor: pointer;"></div></div>
        
 			
 				<div class="form-group" style="grid-column: span 2; background: rgba(0,113,227,0.05); margin-top: 5px;">
