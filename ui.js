@@ -192,21 +192,48 @@ window.addEventListener('DOMContentLoaded', () => {
   dragBtn.addEventListener('mousedown', startDrag);
   window.addEventListener('mousemove', doDrag);
   window.addEventListener('mouseup', endDrag);
- 
-  const useLosCheck = document.getElementById('useLos');
-  if (useLosCheck) {
-    // 로컬스토리지에서 기존 상태 복원
-    const savedLos = localStorage.getItem('arrow_sim_useLos');
-    useLosCheck.checked = (savedLos === 'true');
+// ──────────────────────────────────────────────────────────
+// 💡 깔끔해진 토글 제어 시스템 (ui.js 맨 하단 '});' 바로 위에 덮어쓰세요)
+// ──────────────────────────────────────────────────────────
+const useLosCheck = document.getElementById('useLos');
+if (useLosCheck) {
+  // 로컬스토리지에서 기존 상태 복원
+  const savedLos = localStorage.getItem('arrow_sim_useLos');
+  useLosCheck.checked = (savedLos === 'true');
 
-    // 변경될 때마다 저장하고 화면 리드로우
-    useLosCheck.addEventListener('change', () => {
-      localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
-      if (typeof drawScene === 'function') drawScene();
-    });
-  }  
-  
-});
+  // 클릭해서 변경될 때마다 세팅 저장 및 화면 갱신
+  useLosCheck.addEventListener('change', () => {
+    localStorage.setItem('arrow_sim_useLos', useLosCheck.checked);
+    if (typeof saveSettings === 'function') saveSettings();
+    if (typeof drawScene === 'function') drawScene();
+  });
+}
+
+const lockLosCheck = document.getElementById('lockLos');
+if (lockLosCheck) {
+  const savedLock = localStorage.getItem('arrow_sim_lockLos');
+  lockLosCheck.checked = (savedLock === 'true');
+
+  lockLosCheck.addEventListener('change', () => {
+    localStorage.setItem('arrow_sim_lockLos', lockLosCheck.checked);
+    if (typeof saveSettings === 'function') saveSettings();
+    if (typeof drawScene === 'function') drawScene();
+  });
+}
+
+const useVibrateCheck = document.getElementById('useVibrate');
+if (useVibrateCheck) {
+  const savedVibrate = localStorage.getItem('arrow_sim_useVibrate');
+  useVibrateCheck.checked = (savedVibrate !== 'false'); // 기본값은 true
+
+  useVibrateCheck.addEventListener('change', () => {
+    localStorage.setItem('arrow_sim_useVibrate', useVibrateCheck.checked);
+    if (typeof saveSettings === 'function') saveSettings();
+  });
+}
+
+}); // 👈 파일의 맨 마지막 닫는 괄호입니다. 지워지지 않게 주의하세요!
+
 // 인트로 공지사항 모달 닫기 함수
 function closeIntro() {
   const introModal = document.getElementById('introModal');
