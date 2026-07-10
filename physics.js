@@ -180,7 +180,7 @@ function animate() {
     if (useVibrateCheck && useVibrateCheck.checked) {
         if ('vibrate' in navigator) {
             // 패턴 진동: 200ms 진동 -> 100ms 휴식 -> 200ms 진동
-            navigator.vibrate([200, 100, 200]);
+            navigator.vibrate([200, 000, 000]);
         }
     }
     } else {
