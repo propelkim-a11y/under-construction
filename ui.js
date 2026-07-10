@@ -494,3 +494,88 @@ function exportSettingsToFile() {
     URL.revokeObjectURL(url);
   });
 }
+
+// =========================================================
+// [2단계] 설정 파일 열기 (JSON 읽기 및 화면 반영)
+// =========================================================
+function importSettingsFromFile() {
+  const loadBtn = document.getElementById('loadSettingsBtn');
+  const fileInput = document.getElementById('settingsFileInput');
+  if (!loadBtn || !fileInput) return;
+
+  // 1. 열기 그래픽 버튼 클릭 시, 숨겨진 실제 파일 선택 창을 트리거
+  loadBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // 2. 파일 선택 창에서 사용자가 파일을 골랐을 때의 처리
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const configData = JSON.parse(event.target.result);
+
+        // 정상적인 객체 데이터인지 검증
+        if (!configData || typeof configData !== 'object') {
+          alert('올바르지 않은 설정 파일 형식입니다.');
+          return;
+        }
+
+        // INPUT_IDS 항목들을 순회하며 화면 입력창 채우고 로컬스토리지 저장
+        if (typeof INPUT_IDS !== 'undefined') {
+          INPUT_IDS.forEach(id => {
+            if (configData[id] !== undefined) {
+              const el = document.getElementById(id);
+              if (el) el.value = configData[id];
+              localStorage.setItem('arrow_sim_' + id, configData[id]);
+            }
+          });
+        }
+
+        // useLos 체크박스 상태 복원
+        if (configData['useLos'] !== undefined) {
+          const useLosEl = document.getElementById('useLos');
+          if (useLosEl) useLosEl.checked = configData['useLos'];
+          localStorage.setItem('arrow_sim_useLos', configData['useLos'] ? 'true' : 'false');
+        }
+
+        // 발시 버튼 위치 복원 및 로컬스토리지 최신화
+        if (configData['btn_left'] && configData['btn_top']) {
+          localStorage.setItem('arrow_sim_btn_left', configData['btn_left']);
+          localStorage.setItem('arrow_sim_btn_top', configData['btn_top']);
+          
+          const dragBtn = document.getElementById('draggableFireBtn');
+          if (dragBtn) {
+            dragBtn.style.left = configData['btn_left'];
+            dragBtn.style.top = configData['btn_top'];
+            dragBtn.style.right = 'auto'; // 기존 우측 고정 초기화
+          }
+        }
+
+        // 3. 변경된 데이터 기반으로 시뮬레이터 화면 즉시 갱신
+        if (typeof drawScene === 'function') drawScene();
+        
+        alert('설정 파일이 성공적으로 적용되었습니다.');
+
+      } catch (error) {
+        alert('파일을 읽는 중 오류가 발생했습니다: ' + error.message);
+      } finally {
+        // 똑같은 파일을 연속으로 다시 불러올 수 있도록 파일 선택 상태 초기화
+        fileInput.value = '';
+      }
+    };
+
+    reader.readAsText(file);
+  });
+}
+
+// =========================================================
+// [3단계] 문서 로드가 완료되면 기능들을 최종 활성화
+// =========================================================
+window.addEventListener('DOMContentLoaded', () => {
+  exportSettingsToFile();
+  importSettingsFromFile();
+});
