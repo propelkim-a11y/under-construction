@@ -174,52 +174,10 @@ function animate() {
 
         if (Math.abs(targetHitMetrics.localZ) <= TGT_W / 2 && Math.abs(targetHitMetrics.localY) <= TGT_H / 2) {
             targetHitMetrics.isHit = true;
-
-            // 진동 기능 실행
-            const useVibrateCheck = document.getElementById('useVibrate');
-            if (useVibrateCheck && useVibrateCheck.checked && typeof navigator.vibrate === 'function') {
-                const distanceFromCenter = Math.sqrt(
-                    targetHitMetrics.localZ * targetHitMetrics.localZ + 
-                    targetHitMetrics.localY * targetHitMetrics.localY
-                );
-
-                if (distanceFromCenter < 0.25) {
-                    // [80ms 진동, 40ms 쉬고, 150ms 진동] 배열 형식으로 정확히 수정
-                    navigator.vibrate([80, 40, 150]);
-                } else {
-                    navigator.vibrate(120);
-                }
-            }
         } else {
             targetHitMetrics.isHit = false;
         }
     }
-
-    if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
-    if (!hasReachedTargetY && arrowState.vy <= 0 && prevY >= targetH && arrowState.y <= targetH) {
-        hasReachedTargetY = true;
-        const t = (prevY - targetH) / (prevY - arrowState.y);
-        flightMetrics.maxDistance = prevX + (arrowState.x - prevX) * t;
-        flightMetrics.sideDeviation = prevZ + (arrowState.z - prevZ) * t;
-        const vFinal = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
-        flightMetrics.impactVelocity = vFinal; flightMetrics.impactEnergy = 0.5 * m * vFinal * vFinal;
-    }
-
-    if (!hasReachedTargetY) {
-        flightMetrics.maxDistance = arrowState.x; flightMetrics.sideDeviation = arrowState.z;
-        const vCurrent = Math.sqrt(arrowState.vx * arrowState.vx + arrowState.vy * arrowState.vy + arrowState.vz * arrowState.vz);
-        flightMetrics.impactVelocity = vCurrent; flightMetrics.impactEnergy = 0.5 * m * vCurrent * vCurrent;
-    }
-
-    updateResultUI();
-    if (arrowState.y <= 0) { arrowState.y = 0; isFlying = false; updateResultUI(); }
-    if (arrowState.x > MAX_WORLD_X || arrowState.x < -10) { isFlying = false; }
-
-    drawScene();
-    if (isFlying) { animationFrameId = requestAnimationFrame(animate); }
-}
-
-        }
 
     if (!hasReachedTargetX && arrowState.x >= targetBaseX) { hasReachedTargetX = true; }
     if (!hasReachedTargetY && arrowState.vy <= 0 && prevY >= targetH && arrowState.y <= targetH) {
