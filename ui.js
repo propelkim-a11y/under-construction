@@ -428,3 +428,69 @@ if (simContainer) {
         }
     }
 }
+// =========================================================
+// [1단계] 설정 파일 저장 (유저 지정 이름으로 다운로드)
+// =========================================================
+function exportSettingsToFile() {
+  const saveBtn = document.getElementById('saveSettingsBtn');
+  if (!saveBtn) return;
+
+  saveBtn.addEventListener('click', () => {
+    // 1. 현재 화면의 최신 입력값들을 로컬스토리지에 먼저 동기화
+    if (typeof saveSettings === 'function') saveSettings();
+
+    // 2. 기본 파일 이름 생성 (예: arrow_sim_settings_2026-07-10)
+    const defaultDate = new Date().toISOString().slice(0, 10);
+    const defaultFileName = `arrow_sim_settings_${defaultDate}`;
+
+    // 3. 유저에게 팝업창으로 파일 이름 입력받기
+    let customFileName = prompt("저장할 설정 파일 이름을 입력하세요:", defaultFileName);
+    
+    // 취소 버튼을 누른 경우 작동 중단
+    if (customFileName === null) return; 
+
+    // 앞뒤 공백 제거 및 빈칸일 경우 기본 이름 적용
+    customFileName = customFileName.trim();
+    if (customFileName === "") {
+      customFileName = defaultFileName;
+    }
+
+    // 4. 저장할 데이터 구조 조립
+    const configData = {};
+    
+    // INPUT_IDS 배열을 순회하며 데이터 수집
+    if (typeof INPUT_IDS !== 'undefined') {
+      INPUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) configData[id] = el.value;
+      });
+    }
+
+    // useLos 체크박스 상태 수집
+    const useLosEl = document.getElementById('useLos');
+    if (useLosEl) configData['useLos'] = useLosEl.checked;
+
+    // 발시 버튼 위치 정보 수집
+    const btnLeft = localStorage.getItem('arrow_sim_btn_left');
+    const btnTop = localStorage.getItem('arrow_sim_btn_top');
+    if (btnLeft) configData['btn_left'] = btnLeft;
+    if (btnTop) configData['btn_top'] = btnTop;
+
+    // 5. 가상 다운로드 링크를 생성하여 JSON 파일 내보내기
+    const jsonString = JSON.stringify(configData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    // 확장자(.json) 중복 방지 처리
+    link.download = customFileName.endsWith('.json') ? customFileName : `${customFileName}.json`;
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // 메모리 정리 및 가상 링크 제거
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+}
