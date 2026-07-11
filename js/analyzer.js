@@ -258,10 +258,10 @@ class BowAnalyzer {
       const currentVertex = this.editingVertexType === 'start' ? line.start : line.end;
       const basePt = this.editingVertexType === 'start' ? line.end : line.start;
 
-      if (isPen) {
+      /*if (isPen) {
         targetX = currentVertex.x + 0.55 * (coords.x - currentVertex.x);
         targetY = currentVertex.y + 0.55 * (coords.y - currentVertex.y);
-      }
+      }*/
 
       const angleSnappedPt = this.snapToAbsoluteAngles(basePt, targetX, targetY);
       targetX = angleSnappedPt.x;
@@ -289,10 +289,10 @@ class BowAnalyzer {
       let deltaX = coords.x - this.lastCoords.x;
       let deltaY = coords.y - this.lastCoords.y;
 
-      if (isPen) {
+      /*if (isPen) {
         deltaX *= 0.55;
         deltaY *= 0.55;
-      }
+      }*/
 
       line.start.x += deltaX;
       line.start.y += deltaY;
