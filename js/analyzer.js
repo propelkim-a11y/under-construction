@@ -14,7 +14,7 @@ class BowAnalyzer {
     this.currentLine = null;
     this.transform = { scale: 1, offsetX: 0, offsetY: 0 };
     this.toolMode = 'move';
-    this.snapThreshold = 18; // 손가락 터치 타겟팅 기본 반경
+    this.snapThreshold = 35; // 손가락 터치 타겟팅 기본 반경
     this.isSnapped = false;
 
     // 국궁 전통 표준 절대 고각 자석 제어용 플래그 상태 변수
