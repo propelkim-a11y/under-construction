@@ -475,7 +475,7 @@ class BowAnalyzer {
     this.ctx.save();
     this.ctx.beginPath();
     this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-    this.ctx.lineWidth = (1.5 * scaleX) / this.transform.scale;
+    this.ctx.lineWidth = (0.8 * scaleX) / this.transform.scale;
     const radius = (40 * scaleX) / this.transform.scale;
     this.ctx.arc(l1.end.x, l1.end.y, radius, -a1, -a2, a1 > a2);
     this.ctx.stroke();
@@ -497,7 +497,7 @@ class BowAnalyzer {
 
     this.ctx.translate(this.transform.offsetX * scaleX, this.transform.offsetY * canvasScaleY);
     this.ctx.scale(this.transform.scale, this.transform.scale);
-    this.ctx.lineWidth = (2 * scaleX) / this.transform.scale;
+    this.ctx.lineWidth = (1.2 * scaleX) / this.transform.scale;
 
     this.lines.forEach((line, idx) => {
       const isEditing = (idx === this.editingLineIndex || idx === this.movingLineIndex);
