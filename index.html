@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전통 국궁 대회 운영 시스템</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .apple-blur {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen text-stone-900 selection:bg-emerald-200">
+
+    <!-- 내비게이션 바 -->
+    <nav class="bg-emerald-950/90 text-stone-100 p-4 sticky top-0 z-50 apple-blur shadow-sm border-b border-emerald-900/20">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 max-w-6xl">
+            <h1 class="text-xl font-medium tracking-tight flex items-center gap-2">
+                <span class="text-emerald-400">🎋</span> 국궁 편사 대회 시스템
+            </h1>
+            <div class="flex bg-emerald-900/40 p-1 rounded-xl border border-emerald-800/30 text-sm">
+                <button class="px-4 py-1.5 rounded-lg font-medium bg-emerald-700 text-white">선수 등록</button>
+                <button class="px-4 py-1.5 rounded-lg font-medium text-emerald-300 opacity-50 cursor-not-allowed" disabled>작대 편집 (대기)</button>
+                <button class="px-4 py-1.5 rounded-lg font-medium text-emerald-300 opacity-50 cursor-not-allowed" disabled>점수 입력 (대기)</button>
+                <button class="px-4 py-1.5 rounded-lg font-medium text-emerald-300 opacity-50 cursor-not-allowed" disabled>편사 승부 (대기)</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6 max-w-6xl">
+        
+        <!-- 선수 등록 섹션 -->
+        <section class="bg-white p-8 rounded-2xl shadow-xs border border-stone-200/60 mb-6">
+            
+            <!-- 상단 타이틀 및 CSV 버튼 -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-stone-100 pb-4">
+                <h2 class="text-xl font-semibold tracking-tight flex items-center gap-2 text-emerald-950">
+                    <span class="w-1 h-5 bg-emerald-600 rounded-full"></span> 참가 선수 등록
+                </h2>
+                
+                <!-- CSV 업로드 컴포넌트 -->
+                <div class="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200/80">
+                    <label class="block text-xs font-semibold text-stone-500 px-2">CSV 일괄 등록:</label>
+                    <input type="file" id="csvFile" accept=".csv" class="text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 file:cursor-pointer hover:file:bg-emerald-100 transition-all">
+                    <button onclick="uploadCSV()" class="bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all">가져오기</button>
+                </div>
+            </div>
+
+            <!-- 1명씩 직접 입력하는 폼 -->
+            <form id="registerForm" onsubmit="registerPlayer(event)" class="grid grid-cols-1 md:grid-cols-5 gap-5 items-end mb-10">
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-stone-500">이름</label>
+                    <input type="text" id="pName" required placeholder="이름 입력" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                </div>
+                
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-stone-500">부문 분류</label>
+                    <select id="pDivision" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-600 transition-all font-medium">
+                        <option value="장년부">장년부</option>
+                        <option value="노년부">노년부</option>
+                        <option value="여무사부">여무사부</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-stone-500">급수 또는 단수</label>
+                    <input type="text" id="pRank" required placeholder="예: 3단, 1급" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-stone-500">사용 장비 (궁종)</label>
+                    <select id="pBow" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-600 transition-all font-medium">
+                        <option value="각궁">각궁</option>
+                        <option value="개량궁">개량궁</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-stone-500">편사 대회 소속</label>
+                    <select id="pTeam" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-600 transition-all font-medium">
+                        <option value="A">A조</option>
+                        <option value="B">B조</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="md:col-span-5 bg-emerald-600 text-white font-medium p-3 rounded-xl hover:bg-emerald-700 active:scale-98 transition-all text-sm shadow-sm shadow-emerald-600/10">
+                    ➕ 선수 개별 등록 완료
+                </button>
+            </form>
+
+            <!-- 등록 현황 리스트 -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-semibold text-stone-500">현재 등록된 명단 (<span id="totalCount" class="text-emerald-600">0</span>명)</h3>
+                    <button onclick="clearAllPlayers()" class="text-xs text-stone-400 hover:text-red-500 transition-colors">명단 전체 초기화</button>
+                </div>
+                <div class="overflow-hidden rounded-xl border border-stone-200/80 bg-white">
+                    <table class="w-full border-collapse text-left text-sm">
+                        <thead class="bg-stone-50 text-stone-500 border-b border-stone-200 text-xs font-semibold uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4 w-24">편사 소속</th>
+                                <th class="p-4">이름</th>
+                                <th class="p-4">부문 분류</th>
+                                <th class="p-4">급/단수</th>
+                                <th class="p-4">장비 종류</th>
+                                <th class="p-4 text-center w-20">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playerTableBody" class="divide-y divide-stone-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- CSV 양식 가이드 제공 -->
+        <div class="bg-stone-100 border border-stone-200 rounded-xl p-4 text-xs text-stone-500 space-y-1">
+            <p class="font-semibold text-stone-700">💡 CSV 파일 일괄 등록 가이드</p>
+            <p>메모장이나 엑셀을 이용해 아래 순서(헤더 제외 가능)로 작성 후 <strong>.csv</strong> 확장자로 저장하여 업로드하세요.</p>
+            <p class="bg-white p-2 rounded border border-stone-200 font-mono mt-1 text-emerald-800">이름,부문,급단수,장비,조<br>홍길동,장년부,3단,각궁,A<br>성춘향,여무사부,1급,개량궁,B</p>
+        </div>
+
+    </main>
+
+    <script>
+        // LocalStorage 연동 데이터 불러오기
+        let players = JSON.parse(localStorage.getItem('gukgung_players')) || [];
+
+        function saveToStorage() {
+            localStorage.setItem('gukgung_players', JSON.stringify(players));
+        }
+
+        // 1. 직접 폼 입력 등록 기능
+        function registerPlayer(e) {
+            e.preventDefault();
+            const name = document.getElementById('pName').value.trim();
+            const division = document.getElementById('pDivision').value;
+            const rank = document.getElementById('pRank').value.trim();
+            const bow = document.getElementById('pBow').value;
+            const team = document.getElementById('pTeam').value;
+
+            const newPlayer = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                name,
+                division,
+                rank,
+                bow,
+                team,
+                gateNo: 1, 
+                scores: Array(25).fill(-1) 
+            };
+
+            players.push(newPlayer);
+            saveToStorage();
+            document.getElementById('registerForm').reset();
+            renderRegisterList();
+        }
+
+        // 2. CSV 파일 해석 및 일괄 등록 기능 (인덱스 파싱 오류 수정 완료)
+        function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files || !fileInput.files.length) return alert('선택된 CSV 파일이 없습니다.');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/);
+                let addedCount = 0;
+
+                lines.forEach((line, index) => {
+                    if (!line.trim()) return;
+                    
+                    const columns = line.split(',');
+                    if (index === 0 && columns.includes('이름')) return;
+
+                    if (columns.length >= 5) {
+                        const name = columns[0].trim();
+                    if (columns.length >= 5) {
+                        const name = columns[0].trim();
+                        let division = columns[1].trim();
+                        const rank = columns[2].trim();
+                        let bow = columns[3].trim();
+                        let team = columns[4].trim().toUpperCase();
+
+                        // 데이터 보정 안전장치
+                        if (!['장년부', '노년부', '여무사부'].includes(division)) division = '장년부';
+                        if (!['각궁', '개량궁'].includes(bow)) bow = '개량궁';
+                        if (!['A', 'B'].includes(team)) team = 'A';
+
+                        players.push({
+                            id: (Date.now() + index).toString() + Math.random().toString(36).substr(2, 3),
+                            name,
+                            division,
+                            rank,
+                            bow,
+                            team,
+                            gateNo: 1,
+                            scores: Array(25).fill(-1)
+                        });
+                        addedCount++;
+                    }
+                });
+
+                if (addedCount > 0) {
+                    saveToStorage();
+                    renderRegisterList();
+                    alert(`성공적으로 ${addedCount}명의 선수를 일괄 등록했습니다.`);
+                    fileInput.value = '';
+                } else {
+                    alert('유효한 CSV 데이터 형식을 찾지 못했습니다.');
+                }
+            };
+
+            reader.readAsText(file, 'EUC-KR'); 
+        }
+
+        // 명단 삭제 기능
+        function deletePlayer(id) {
+            if (confirm('해당 선수를 명단에서 제거하시겠습니까?')) {
+                players = players.filter(p => p.id !== id);
+                saveToStorage();
+                renderRegisterList();
+            }
+        }
+
+        // 전체 초기화
+        function clearAllPlayers() {
+            if (confirm('⚠️ 경고: 모든 선수 데이터와 점수 기록이 영구 삭제됩니다. 진행하시겠습니까?')) {
+                players = [];
+                saveToStorage();
+                renderRegisterList();
+            }
+        }
+
+        // 테이블 렌더링 함수
+        function renderRegisterList() {
+            document.getElementById('totalCount').innerText = players.length;
+            const tbody = document.getElementById('playerTableBody');
+            tbody.innerHTML = '';
+
+            players.forEach(p => {
+                const teamBadge = p.team === 'A' 
+                    ? `<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/50">A조</span>`
+                    : `<span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/50">B조</span>`;
+
+                const bowBadge = p.bow === '각궁'
+                    ? `<span class="px-2 py-0.5 rounded-md text-xs font-medium bg-orange-50 text-orange-800 border border-orange-200/40">각궁</span>`
+                    : `<span class="px-2 py-0.5 rounded-md text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">개량궁</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-stone-50/60 transition-colors">
+                        <td class="p-4">${teamBadge}</td>
+                        <td class="p-4 font-medium text-stone-900">${p.name}</td>
+                        <td class="p-4 text-stone-600 text-xs font-medium">${p.division}</td>
+                        <td class="p-4 text-stone-600 text-sm">${p.rank}</td>
+                        <td class="p-4">${bowBadge}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deletePlayer('${p.id}')" class="text-stone-400 hover:text-red-500 transition-colors text-xs">삭제</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 최초 로드 시 명단 출력
+        renderRegisterList();
