@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>활대회 운영 시스템</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>활대회 시스템</h1>
+        <div class="subtitle">선수 등록 및 명단 관리</div>
+        
+        <h2 id="formTitle">개별 선수 등록</h2>
+        <div class="ios-card">
+            <form id="playerForm">
+                <div class="form-group">
+                    <label for="playerName">이름</label>
+                    <input type="text" id="playerName" required placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label for="playerBirth">생년 (4자리)</label>
+                    <input type="number" id="playerBirth" min="1900" max="2026" required placeholder="1995">
+                </div>
+                <div class="form-group">
+                    <label for="playerRank">급수 또는 단수</label>
+                    <input type="text" id="playerRank" required placeholder="3단 또는 1급">
+                </div>
+                <div class="form-group">
+                    <label>사용 장비</label>
+                    <div class="segmented-control">
+                        <label>
+                            <input type="radio" name="playerEquipment" value="개량궁" checked>
+                            <span>개량궁</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="playerEquipment" value="각궁">
+                            <span>각궁</span>
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn" style="margin-top: 20px;">선수 추가</button>
+            </form>
+        </div>
+
+        <h2>데이터 가져오기 / 내보내기</h2>
+        <div class="ios-card">
+            <input type="file" id="csvFile" accept=".csv">
+            <button type="button" class="csv-btn" id="uploadBtn">CSV 명단 가져오기</button>
+            <div class="file-notice">CSV 규격: 이름, 생년, 급수단수, 장비</div>
+            <hr style="border: 0; border-top: 1px solid #e5e5ea; margin: 16px 0;">
+            <label>현재 명단 백업</label>
+            <div class="download-zone">
+                <input type="text" id="fileNameInput" class="filename-input" placeholder="대회선수명단">
+                <button type="button" class="download-btn" id="downloadBtn">CSV 저장</button>
+            </div>
+        </div>
+
+        <h2>등록된 선수 (<span id="playerCount">0</span>명)</h2>
+        <ul class="player-list" id="playerListBody"></ul>
+    </div>
+
+    <!-- 브라우저 내장 모듈 기능 활성화 -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
